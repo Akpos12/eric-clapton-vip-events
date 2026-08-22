@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Publicly viewable tour dates and concert details
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // VIP Package Catalog
+    match /vip_packages/{packageId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Fan Giveaways & Sweepstakes
+    match /giveaways/{giveawayId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Ticket Orders (Public booking creation & retrieval via order verification)
+    match /ticket_orders/{orderId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if true;
+    }
+
+    // Meet & Greet Requests (Public submission & admin review)
+    match /meet_greet_requests/{requestId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if true;
+    }
+
+    // Support Tickets (Public concierge submissions & admin responses)
+    match /support_tickets/{ticketId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if true;
+    }
+
+    // Payment Methods Configuration (Public checkout instructions & admin setup)
+    match /payment_methods/{methodId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

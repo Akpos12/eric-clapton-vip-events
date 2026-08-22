@@ -1,0 +1,6 @@
+{
+  "name": "Eric Clapton VIP Experience",
+  "description": "Concert ticketing, VIP packages, exclusive meet-and-greet requests, digital passes, fan rewards, and concierge for Eric Clapton live events.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
