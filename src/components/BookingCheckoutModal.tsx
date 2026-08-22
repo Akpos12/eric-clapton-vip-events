@@ -27,7 +27,8 @@ import {
   Wallet,
   Smartphone,
   Eye,
-  FileCheck
+  FileCheck,
+  MessageSquare
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ConcertEvent, TicketTierConfig, TicketOrder, TicketAttendee, PricingBreakdown, PaymentMethodConfig } from '../types';
@@ -40,6 +41,7 @@ interface BookingCheckoutModalProps {
   event: ConcertEvent | null;
   initialTierId?: string;
   onOrderCompleted?: (order: TicketOrder) => void;
+  onOpenConciergeWithEmail?: (email: string, bookingRef?: string) => void;
 }
 
 export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
@@ -47,7 +49,8 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
   onClose,
   event,
   initialTierId,
-  onOrderCompleted
+  onOrderCompleted,
+  onOpenConciergeWithEmail
 }) => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedTierId, setSelectedTierId] = useState<string>(
@@ -892,10 +895,24 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs uppercase tracking-widest font-mono transition-colors cursor-pointer w-full sm:w-auto"
+                  className="px-6 py-2.5 bg-[#1A1A1D] hover:bg-white/10 text-[#F5F5DC] font-bold text-xs uppercase tracking-widest font-mono border border-white/10 transition-colors cursor-pointer w-full sm:w-auto"
                 >
-                  Done / Close
+                  Close Window
                 </button>
+
+                {onOpenConciergeWithEmail && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenConciergeWithEmail(completedOrder.attendee.email, completedOrder.id);
+                      onClose();
+                    }}
+                    className="px-6 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition-colors cursor-pointer w-full sm:w-auto shadow-lg shadow-[#D4AF37]/20"
+                  >
+                    <MessageSquare className="w-4 h-4 text-black" />
+                    <span>Chat / Message Customer Care</span>
+                  </button>
+                )}
               </div>
             </div>
           )}

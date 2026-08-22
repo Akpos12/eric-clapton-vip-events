@@ -19,7 +19,8 @@ import {
   Lock,
   FileCheck,
   Eye,
-  Building2
+  Building2,
+  MessageSquare
 } from 'lucide-react';
 import { TicketOrder, MeetGreetRequest } from '../types';
 import { getOrderById, getMeetGreetById, searchTickets } from '../lib/api';
@@ -29,12 +30,14 @@ interface CheckTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectEvent?: (eventId: string) => void;
+  onOpenConciergeWithEmail?: (email: string, bookingRef?: string) => void;
 }
 
 export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
   isOpen,
   onClose,
-  onSelectEvent
+  onSelectEvent,
+  onOpenConciergeWithEmail
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -407,22 +410,38 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                {isOrderApproved ? (
-                  <button
-                    type="button"
-                    onClick={handleDownloadPDF}
-                    disabled={isExportingPdf}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>{isExportingPdf ? 'Generating PDF...' : 'Download Printable PDF Ticket'}</span>
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2 px-4 py-2.5 bg-[#1A1A1D] border border-white/10 text-[#F5F5DC]/40 text-xs font-mono">
-                    <Lock className="w-4 h-4 text-amber-400" />
-                    <span>Download Locked Until Approved by Admin</span>
-                  </div>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {isOrderApproved ? (
+                    <button
+                      type="button"
+                      onClick={handleDownloadPDF}
+                      disabled={isExportingPdf}
+                      className="flex items-center gap-2 px-5 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>{isExportingPdf ? 'Generating PDF...' : 'Download Printable PDF Ticket'}</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-[#1A1A1D] border border-white/10 text-[#F5F5DC]/40 text-xs font-mono">
+                      <Lock className="w-4 h-4 text-amber-400" />
+                      <span>Download Locked Until Approved by Admin</span>
+                    </div>
+                  )}
+
+                  {onOpenConciergeWithEmail && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOpenConciergeWithEmail(ticketOrder.attendee.email, ticketOrder.id);
+                        onClose();
+                      }}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-[#121214] hover:bg-[#1A1A1D] text-[#D4AF37] border border-[#D4AF37]/40 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer"
+                    >
+                      <MessageSquare className="w-4 h-4 text-[#D4AF37]" />
+                      <span>Message Customer Care</span>
+                    </button>
+                  )}
+                </div>
 
                 {onSelectEvent && (
                   <button

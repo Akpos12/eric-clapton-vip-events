@@ -27,7 +27,12 @@ import {
   Check,
   X,
   Lock,
-  Tag
+  Tag,
+  Headphones,
+  MessageSquare,
+  Send,
+  Mail,
+  User
 } from 'lucide-react';
 import { 
   ConcertEvent, 
@@ -47,7 +52,9 @@ import {
   deletePaymentMethod,
   updateMeetGreetStatus, 
   saveConcertEvent, 
-  deleteConcertEvent 
+  deleteConcertEvent,
+  addSupportMessage,
+  updateSupportTicketStatus
 } from '../lib/api';
 
 interface AdminDashboardProps {
@@ -67,13 +74,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onDataChanged,
   onLockAdmin
 }) => {
-  const [adminTab, setAdminTab] = useState<'overview' | 'bookings' | 'payment-methods' | 'events' | 'meet-greets' | 'analytics'>('overview');
+  const [adminTab, setAdminTab] = useState<'overview' | 'bookings' | 'payment-methods' | 'events' | 'meet-greets' | 'customer-care' | 'analytics'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'approved' | 'declined'>('all');
   const [selectedEventForEdit, setSelectedEventForEdit] = useState<ConcertEvent | null>(null);
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
   const [selectedEventForPrices, setSelectedEventForPrices] = useState<ConcertEvent | null>(null);
   const [statusActionLoading, setStatusActionLoading] = useState(false);
+  
+  // Support / Customer Care Admin State
+  const [selectedAdminTicketId, setSelectedAdminTicketId] = useState<string>('');
+  const [adminReplyText, setAdminReplyText] = useState('');
+  const [adminSenderName, setAdminSenderName] = useState('Tour Operations Specialist');
+  const [supportEmailSearch, setSupportEmailSearch] = useState('');
+  const [supportCategoryFilter, setSupportCategoryFilter] = useState<string>('all');
+  const [isSendingAdminReply, setIsSendingAdminReply] = useState(false);
   
   // Proof Viewer Modal
   const [viewingProofOrder, setViewingProofOrder] = useState<TicketOrder | null>(null);
@@ -104,6 +119,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     .reduce((sum, o) => sum + o.quantity, 0);
   const pendingPaymentsCount = orders.filter(o => o.paymentStatus === 'Payment Pending' || o.ticketStatus === 'PAYMENT PENDING').length;
   const pendingMgrCount = meetGreets.filter(m => m.status === 'Request Received' || m.status === 'Under Review' || m.status === 'Awaiting Organizer Confirmation').length;
+  const openSupportCount = supportTickets.filter(t => t.status === 'Open' || t.status === 'In Progress').length;
+
+  // Customer Care admin handlers
+  const activeAdminTicket = supportTickets.find(t => t.id === selectedAdminTicketId) || supportTickets[0];
+  const linkedBookingForActiveTicket = activeAdminTicket?.bookingRef
+    ? orders.find(o => o.id === activeAdminTicket.bookingRef)
+    : activeAdminTicket?.customerEmail
+    ? orders.find(o => o.attendee?.email?.toLowerCase() === activeAdminTicket.customerEmail.toLowerCase())
+    : null;
+
+  const handleSendAdminReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminReplyText.trim() || !activeAdminTicket) return;
+
+    setIsSendingAdminReply(true);
+    try {
+      await addSupportMessage(activeAdminTicket.id, 'agent', adminSenderName, adminReplyText.trim());
+      setAdminReplyText('');
+      onDataChanged();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSendingAdminReply(false);
+    }
+  };
+
+  const handleUpdateAdminTicketStatus = async (ticketId: string, status: SupportTicket['status']) => {
+    try {
+      await updateSupportTicketStatus(ticketId, status);
+      onDataChanged();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // Order Approvals
   const handleApprovePayment = async (orderId: string) => {
@@ -301,6 +350,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           { id: 'payment-methods', label: `Payment Methods (${paymentMethods.length})`, icon: CreditCard },
           { id: 'events', label: `Concerts & Ticket Prices (${events.length})`, icon: Calendar },
           { id: 'meet-greets', label: `Meet & Greet Requests (${pendingMgrCount} Pending)`, icon: Sparkles },
+          { id: 'customer-care', label: `Customer Inquiries (${openSupportCount} Open)`, icon: Headphones, highlight: openSupportCount > 0 },
           { id: 'analytics', label: 'Revenue Analytics', icon: DollarSign }
         ].map((tab) => {
           const isSel = adminTab === tab.id;
@@ -1294,7 +1344,257 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* 6. REVENUE ANALYTICS TAB */}
+      {/* 6. CUSTOMER CARE & LIVE INQUIRIES TAB */}
+      {adminTab === 'customer-care' && (
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 p-5 bg-[#121214] border border-[#D4AF37]/30">
+            <div>
+              <span className="text-[10px] font-mono text-[#D4AF37] uppercase tracking-widest">VIP FAN CONCIERGE & SUPPORT</span>
+              <h3 className="font-serif text-xl font-bold text-[#F5F5DC]">Customer Inquiries & Live Chat Desks</h3>
+              <p className="text-xs text-[#F5F5DC]/60 font-light">
+                Review and respond to questions submitted by fans, filter by ticket booking email, and update status in real time.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#D4AF37]" />
+                <input
+                  type="text"
+                  value={supportEmailSearch}
+                  onChange={(e) => setSupportEmailSearch(e.target.value)}
+                  placeholder="Filter by customer email..."
+                  className="pl-8 pr-3 py-1.5 bg-[#0B0B0D] border border-white/10 text-xs text-[#F5F5DC] focus:outline-none focus:border-[#D4AF37] font-mono w-64"
+                />
+              </div>
+
+              <select
+                value={supportCategoryFilter}
+                onChange={(e) => setSupportCategoryFilter(e.target.value)}
+                className="px-3 py-1.5 bg-[#0B0B0D] border border-white/10 text-xs text-[#F5F5DC] focus:outline-none focus:border-[#D4AF37] font-mono"
+              >
+                <option value="all">All Categories</option>
+                <option value="VIP Inquiries">VIP Inquiries</option>
+                <option value="Ticket Lookup">Ticket Lookup</option>
+                <option value="Meet & Greet">Meet & Greet</option>
+                <option value="Venue & Accessibility">Venue & Accessibility</option>
+                <option value="Reschedule / Refund">Reschedule / Refund</option>
+                <option value="General Support">General Support</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Customer Care Interface */}
+          <div className="bg-[#121214] border border-white/10 grid grid-cols-1 lg:grid-cols-3 min-h-[550px]">
+            {/* Tickets Sidebar */}
+            <div className="border-b lg:border-b-0 lg:border-r border-white/10 p-4 space-y-3 bg-[#0B0B0D]/50">
+              <div className="text-[10px] font-mono text-[#D4AF37] uppercase tracking-widest flex items-center justify-between">
+                <span>Inquiry Queue</span>
+                <span>{supportTickets.length} Total</span>
+              </div>
+
+              <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+                {supportTickets
+                  .filter(t => {
+                    if (supportCategoryFilter !== 'all' && t.category !== supportCategoryFilter) return false;
+                    if (supportEmailSearch.trim()) {
+                      const q = supportEmailSearch.toLowerCase();
+                      return (
+                        t.customerEmail?.toLowerCase().includes(q) ||
+                        t.customerName?.toLowerCase().includes(q) ||
+                        t.id.toLowerCase().includes(q) ||
+                        t.subject?.toLowerCase().includes(q)
+                      );
+                    }
+                    return true;
+                  })
+                  .map((t) => {
+                    const isSel = (activeAdminTicket && activeAdminTicket.id === t.id);
+                    const lastMsg = t.messages[t.messages.length - 1];
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => setSelectedAdminTicketId(t.id)}
+                        className={`p-3 border cursor-pointer transition-colors ${
+                          isSel
+                            ? 'bg-[#1A1A1D] border-[#D4AF37]'
+                            : 'bg-[#121214] border-white/5 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-mono text-[#D4AF37] font-bold">#{t.id}</span>
+                          <span className={`px-1.5 py-0.2 text-[9px] font-mono uppercase ${
+                            t.status === 'Resolved'
+                              ? 'bg-emerald-500/20 text-emerald-300'
+                              : t.status === 'In Progress'
+                              ? 'bg-sky-500/20 text-sky-300'
+                              : 'bg-amber-500/20 text-amber-300'
+                          }`}>
+                            {t.status}
+                          </span>
+                        </div>
+                        <h4 className="font-serif font-bold text-xs text-[#F5F5DC] mt-1 truncate">{t.subject}</h4>
+                        <div className="text-[10px] text-[#F5F5DC]/50 font-mono flex items-center gap-1.5 mt-0.5">
+                          <User className="w-3 h-3 text-[#D4AF37]" />
+                          <span className="text-[#F5F5DC]/80 font-bold">{t.customerName}</span>
+                          <span>•</span>
+                          <span className="truncate">{t.customerEmail}</span>
+                        </div>
+                        {lastMsg && (
+                          <p className="text-[10px] text-[#F5F5DC]/60 mt-1 line-clamp-1 italic">
+                            "{lastMsg.text}"
+                          </p>
+                        )}
+                        <div className="text-[9px] text-[#F5F5DC]/40 mt-1 font-mono flex justify-between">
+                          <span>{t.category}</span>
+                          <span>{new Date(t.updatedAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* Conversation and Admin Control Panel */}
+            <div className="lg:col-span-2 p-6 flex flex-col justify-between space-y-4">
+              {activeAdminTicket ? (
+                <>
+                  <div className="space-y-3 pb-3 border-b border-white/10">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs text-[#D4AF37] font-bold">#{activeAdminTicket.id}</span>
+                        <span className="text-xs text-[#F5F5DC]/50 font-mono">({activeAdminTicket.category})</span>
+                        <span className="px-2 py-0.5 text-[9px] font-mono uppercase bg-[#1A1A1D] text-[#D4AF37] border border-white/10">
+                          Priority: {activeAdminTicket.priority}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-mono text-[#F5F5DC]/60">Status:</span>
+                        <select
+                          value={activeAdminTicket.status}
+                          onChange={(e) => handleUpdateAdminTicketStatus(activeAdminTicket.id, e.target.value as any)}
+                          className="px-2.5 py-1 bg-[#0B0B0D] border border-white/15 text-xs text-[#F5F5DC] font-mono focus:border-[#D4AF37]"
+                        >
+                          <option value="Open">Open</option>
+                          <option value="In Progress">In Progress</option>
+                          <option value="Resolved">Resolved</option>
+                          <option value="Closed">Closed</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <h3 className="font-serif text-lg font-bold text-[#F5F5DC]">
+                      {activeAdminTicket.subject}
+                    </h3>
+
+                    {/* Customer & Linked Booking Header */}
+                    <div className="p-3 bg-[#0B0B0D] border border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <div>
+                        <div className="font-mono text-[11px] text-[#F5F5DC]">
+                          Customer: <strong className="text-[#D4AF37]">{activeAdminTicket.customerName}</strong> ({activeAdminTicket.customerEmail})
+                        </div>
+                        {activeAdminTicket.bookingRef && (
+                          <div className="text-[10px] text-[#F5F5DC]/60 font-mono">
+                            Linked Order ID: #{activeAdminTicket.bookingRef}
+                          </div>
+                        )}
+                      </div>
+
+                      {linkedBookingForActiveTicket && (
+                        <div className="text-right text-[10px] font-mono">
+                          <span className="text-emerald-400 font-bold block">
+                            Verified Booking: #{linkedBookingForActiveTicket.id}
+                          </span>
+                          <span className="text-[#F5F5DC]/60">
+                            {linkedBookingForActiveTicket.quantity}x {linkedBookingForActiveTicket.tierName} • {linkedBookingForActiveTicket.paymentStatus}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Messages Thread Stream */}
+                  <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 flex-1">
+                    {activeAdminTicket.messages.map((msg) => {
+                      const isUser = msg.sender === 'user';
+                      const isAgent = msg.sender === 'agent';
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex flex-col ${isAgent ? 'items-end' : 'items-start'}`}
+                        >
+                          <div className="text-[10px] text-[#F5F5DC]/50 font-mono mb-1 flex items-center gap-1.5">
+                            {isAgent && <ShieldCheck className="w-3 h-3 text-[#D4AF37]" />}
+                            <span className={isAgent ? 'text-[#D4AF37] font-semibold' : 'text-[#F5F5DC]/80'}>
+                              {msg.senderName} ({isAgent ? 'Admin/Liaison' : 'Fan'})
+                            </span>
+                            <span>•</span>
+                            <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</span>
+                          </div>
+                          <div
+                            className={`p-3.5 max-w-xl text-xs leading-relaxed ${
+                              isAgent
+                                ? 'bg-[#1A1A1D] border border-[#D4AF37]/50 text-[#F5F5DC]'
+                                : 'bg-[#D4AF37] text-black font-medium'
+                            }`}
+                          >
+                            {msg.text}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Admin Reply Composer */}
+                  <form onSubmit={handleSendAdminReply} className="pt-3 border-t border-white/10 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] font-mono text-[#F5F5DC]/60">
+                      <span>Reply to Fan ({activeAdminTicket.customerEmail}):</span>
+                      <div className="flex items-center gap-1">
+                        <span>Dispatch as:</span>
+                        <select
+                          value={adminSenderName}
+                          onChange={(e) => setAdminSenderName(e.target.value)}
+                          className="bg-[#0B0B0D] text-[#D4AF37] px-2 py-0.5 border border-white/10 text-[10px]"
+                        >
+                          <option value="Tour Operations Specialist">Tour Operations Specialist</option>
+                          <option value="Alex Watchman (Tour Manager)">Alex Watchman (Tour Manager)</option>
+                          <option value="VIP Seating & Hospitality Concierge">VIP Seating & Hospitality Concierge</option>
+                          <option value="Security & Gate Credentials Liaison">Security & Gate Credentials Liaison</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={adminReplyText}
+                        onChange={(e) => setAdminReplyText(e.target.value)}
+                        placeholder="Type response for customer care channel..."
+                        className="flex-1 px-4 py-2.5 bg-[#0B0B0D] border border-white/15 text-xs text-[#F5F5DC] focus:outline-none focus:border-[#D4AF37]"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isSendingAdminReply || !adminReplyText.trim()}
+                        className="px-6 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs uppercase tracking-wider font-mono disabled:opacity-50 flex items-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        {isSendingAdminReply ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                        <span>Send Reply</span>
+                      </button>
+                    </div>
+                  </form>
+                </>
+              ) : (
+                <div className="text-center py-20 text-[#F5F5DC]/50 text-xs font-mono">
+                  Select a support ticket from the left queue to view and respond.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. REVENUE ANALYTICS TAB */}
       {adminTab === 'analytics' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

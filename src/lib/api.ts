@@ -32,13 +32,13 @@ import {
 } from '../data/mockData';
 
 // Local storage fallback keys for instant responsiveness if offline or initial setup
-const LS_EVENTS_KEY = 'ec_vip_events_store_v5';
-const LS_ORDERS_KEY = 'ec_vip_orders_store_v5';
-const LS_MGR_KEY = 'ec_vip_mgr_store_v5';
-const LS_SUPPORT_KEY = 'ec_vip_support_store_v5';
-const LS_VIP_KEY = 'ec_vip_packages_store_v5';
-const LS_REWARDS_KEY = 'ec_vip_rewards_store_v5';
-const LS_PAYMENT_METHODS_KEY = 'ec_vip_payment_methods_store_v5';
+const LS_EVENTS_KEY = 'ec_vip_events_store_v6';
+const LS_ORDERS_KEY = 'ec_vip_orders_store_v6';
+const LS_MGR_KEY = 'ec_vip_mgr_store_v6';
+const LS_SUPPORT_KEY = 'ec_vip_support_store_v6';
+const LS_VIP_KEY = 'ec_vip_packages_store_v6';
+const LS_REWARDS_KEY = 'ec_vip_rewards_store_v6';
+const LS_PAYMENT_METHODS_KEY = 'ec_vip_payment_methods_store_v6';
 
 // Timeout helper to prevent Firestore network stalls
 async function withTimeout<T>(promise: Promise<T>, timeoutMs = 2000): Promise<T> {
@@ -498,6 +498,20 @@ export async function getSupportTickets(): Promise<SupportTicket[]> {
   return raw ? JSON.parse(raw) : SAMPLE_SUPPORT_TICKETS;
 }
 
+export async function getSupportTicketsByEmail(email: string): Promise<SupportTicket[]> {
+  const cleanEmail = email.trim().toLowerCase();
+  if (!cleanEmail) return [];
+  const allTickets = await getSupportTickets();
+  return allTickets.filter(t => t.customerEmail?.toLowerCase() === cleanEmail);
+}
+
+export async function getOrdersByEmail(email: string): Promise<TicketOrder[]> {
+  const cleanEmail = email.trim().toLowerCase();
+  if (!cleanEmail) return [];
+  const allOrders = await getTicketOrders();
+  return allOrders.filter(o => o.attendee?.email?.toLowerCase() === cleanEmail);
+}
+
 export async function createSupportTicket(ticket: SupportTicket): Promise<SupportTicket> {
   try {
     await withTimeout(setDoc(doc(db, 'support_tickets', ticket.id), ticket), 2000);
@@ -508,6 +522,34 @@ export async function createSupportTicket(ticket: SupportTicket): Promise<Suppor
   list.unshift(ticket);
   localStorage.setItem(LS_SUPPORT_KEY, JSON.stringify(list));
   return ticket;
+}
+
+export async function updateSupportTicketStatus(
+  ticketId: string,
+  status: SupportTicket['status'],
+  priority?: SupportTicket['priority'],
+  assignedAdmin?: string
+): Promise<void> {
+  const list = await getSupportTickets();
+  const idx = list.findIndex(t => t.id === ticketId);
+  if (idx >= 0) {
+    list[idx].status = status;
+    if (priority) list[idx].priority = priority;
+    if (assignedAdmin) list[idx].assignedAdmin = assignedAdmin;
+    list[idx].updatedAt = new Date().toISOString();
+    localStorage.setItem(LS_SUPPORT_KEY, JSON.stringify(list));
+    try {
+      const updates: Record<string, unknown> = {
+        status,
+        updatedAt: list[idx].updatedAt
+      };
+      if (priority) updates.priority = priority;
+      if (assignedAdmin) updates.assignedAdmin = assignedAdmin;
+      await withTimeout(updateDoc(doc(db, 'support_tickets', ticketId), updates), 2000);
+    } catch {
+      // fallback
+    }
+  }
 }
 
 export async function addSupportMessage(ticketId: string, sender: 'user' | 'agent', senderName: string, text: string): Promise<SupportTicket | null> {
@@ -523,10 +565,15 @@ export async function addSupportMessage(ticketId: string, sender: 'user' | 'agen
     };
     list[idx].messages.push(newMsg);
     list[idx].updatedAt = new Date().toISOString();
+    // If user replies and ticket was Resolved, move to In Progress
+    if (sender === 'user' && list[idx].status === 'Resolved') {
+      list[idx].status = 'In Progress';
+    }
     localStorage.setItem(LS_SUPPORT_KEY, JSON.stringify(list));
     try {
       await withTimeout(updateDoc(doc(db, 'support_tickets', ticketId), {
         messages: list[idx].messages,
+        status: list[idx].status,
         updatedAt: list[idx].updatedAt
       }), 2000);
     } catch {

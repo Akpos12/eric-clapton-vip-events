@@ -98,8 +98,8 @@ export const Footer: React.FC<FooterProps> = ({
               </button>
             </li>
             <li>
-              <button onClick={() => onNavigate('concierge')} className="hover:text-[#D4AF37] transition-colors">
-                24/7 Fan Concierge Desk
+              <button onClick={() => onNavigate('concierge')} className="hover:text-[#D4AF37] transition-colors text-[#D4AF37]">
+                Track Inquiries & Live Chat (By Booking Email)
               </button>
             </li>
             <li>

@@ -54,6 +54,14 @@ export default function App() {
   const [selectedTierForCheckout, setSelectedTierForCheckout] = useState<string | undefined>(undefined);
   const [isMeetGreetOpen, setIsMeetGreetOpen] = useState(false);
   const [selectedEventForMeetGreet, setSelectedEventForMeetGreet] = useState<string | undefined>(undefined);
+  const [conciergePrefilledEmail, setConciergePrefilledEmail] = useState<string>('');
+
+  const handleOpenConciergeWithEmail = (email: string) => {
+    setConciergePrefilledEmail(email);
+    localStorage.setItem('ec_vip_fan_email', email);
+    setActiveTab('concierge');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Global secret shortcut and URL hash listener
   useEffect(() => {
@@ -256,6 +264,8 @@ export default function App() {
             {activeTab === 'concierge' && (
               <FanConcierge
                 tickets={supportTickets}
+                orders={orders}
+                initialEmail={conciergePrefilledEmail}
                 onOpenCheckTicket={() => setIsCheckTicketOpen(true)}
                 onRequestMeetGreet={() => handleOpenMeetGreet()}
                 onRefreshTickets={refreshAllData}
@@ -291,6 +301,7 @@ export default function App() {
           const ev = events.find(e => e.id === eventId);
           if (ev) handleOpenBooking(ev);
         }}
+        onOpenConciergeWithEmail={handleOpenConciergeWithEmail}
       />
 
       <BookingCheckoutModal
@@ -299,6 +310,7 @@ export default function App() {
         event={selectedEventForCheckout}
         initialTierId={selectedTierForCheckout}
         onOrderCompleted={() => refreshAllData()}
+        onOpenConciergeWithEmail={handleOpenConciergeWithEmail}
       />
 
       <MeetGreetModal

@@ -102,7 +102,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
     eventDate: '2026-09-06',
     doorsOpen: '18:30',
     concertTime: '20:00',
-    startingPrice: 165,
+    startingPrice: 1800,
     vipAvailability: true,
     meetAndGreetAvailability: true,
     status: 'upcoming',
@@ -116,7 +116,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'det-tier-ga',
         name: 'General Admission',
-        price: 165,
+        price: 1800,
         description: 'Arena standing with central sightlines & sound immersion.',
         benefits: ['Direct Stage Arena Standing', 'Commemorative Digital Tour Badge', 'Exclusive Queue Access'],
         inventory: 150,
@@ -126,7 +126,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'det-tier-std',
         name: 'Standard Seating',
-        price: 245,
+        price: 2650,
         description: 'Reserved elevated tier seats with superb acoustic clarity.',
         benefits: ['Reserved Lower Bowl 100-Level Seating', 'Digital Program Guide', 'Souvenir Concert Lanyard'],
         inventory: 200,
@@ -136,7 +136,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'det-tier-prem',
         name: 'Premium Seating',
-        price: 420,
+        price: 3650,
         description: 'Prime lower bowl & club stalls facing center stage directly.',
         benefits: ['Prime Lower Stalls Row A-E', 'Express Merchandise Fast-Track', 'Exclusive Collector Ticket in Acrylic Case'],
         inventory: 80,
@@ -145,9 +145,20 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
         sectionInfo: 'Center Club Rows 1-5'
       },
       {
+        id: 'det-tier-hosp',
+        name: 'Hospitality Package',
+        price: 4250,
+        description: 'Gourmet fine dining 3-course dinner before the show in the arena chef suite.',
+        benefits: ['3-Course Sommelier-Paired Dinner Pre-Show', 'Premium Reserved Seat', 'Post-Concert Dessert Bar & Digestif Access', 'Official 2026 Tour Program Book'],
+        inventory: 30,
+        available: 9,
+        badge: 'Fine Dining',
+        sectionInfo: 'Club Suite & Private Dining Room'
+      },
+      {
         id: 'det-tier-vip',
         name: 'VIP',
-        price: 780,
+        price: 5800,
         description: 'Full hospitality and dedicated VIP entrance with collectible merchandise.',
         benefits: ['Front Rows 1-3 Premium Seating', 'Dedicated Red Carpet VIP Entrance', 'Pre-Show Champagne & Artisan Dining Reception', 'Custom Leather Tour Jacket Voucher', 'Commemorative Laminate & Lanyard'],
         inventory: 40,
@@ -158,23 +169,13 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'det-tier-prem-vip',
         name: 'Premium VIP',
-        price: 1350,
+        price: 9200,
         description: 'The highest tier concert luxury experience with private lounge access.',
         benefits: ['Stage-Side Ultra VIP Banquette', 'Private Concierge Escort Throughout Night', 'Access to Historic Artists Gallery Lounge', 'Curated Vintage Clapton Vinyl Boxset', 'Complimentary Top-Shelf Bar & Gastronomy', 'On-Site Host'],
         inventory: 15,
         available: 4,
         badge: 'Ultra Exclusive',
         sectionInfo: 'Stage Front Royal Box Suite'
-      },
-      {
-        id: 'det-tier-hosp',
-        name: 'Hospitality Package',
-        price: 890,
-        description: 'Gourmet fine dining 3-course dinner before the show in the arena chef suite.',
-        benefits: ['3-Course Sommelier-Paired Dinner Pre-Show', 'Premium Reserved Seat', 'Post-Concert Dessert Bar & Digestif Access', 'Official 2026 Tour Program Book'],
-        inventory: 30,
-        available: 9,
-        sectionInfo: 'Club Suite & Private Dining Room'
       }
     ]
   },
@@ -189,7 +190,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
     eventDate: '2026-09-09',
     doorsOpen: '18:30',
     concertTime: '20:00',
-    startingPrice: 155,
+    startingPrice: 1800,
     vipAvailability: true,
     meetAndGreetAvailability: true,
     status: 'upcoming',
@@ -203,7 +204,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'cin-tier-ga',
         name: 'General Admission',
-        price: 155,
+        price: 1800,
         description: 'Floor standing with vibrant atmosphere and close soundstage presence.',
         benefits: ['General Floor Entry', 'Commemorative Tour Wristband'],
         inventory: 200,
@@ -213,7 +214,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'cin-tier-std',
         name: 'Standard Seating',
-        price: 235,
+        price: 2550,
         description: 'Reserved Lower Bowl Club seating with direct sightlines.',
         benefits: ['Lower Bowl 100-Level Reserved Seats', 'Digital Concert Program'],
         inventory: 180,
@@ -223,7 +224,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'cin-tier-vip',
         name: 'VIP',
-        price: 750,
+        price: 5600,
         description: 'Floor Front VIP with Riverfront Club pre-show hospitality access.',
         benefits: ['Floor Rows 1-5 Center Stage', 'Riverfront VIP Lounge Dining Access', 'Collector Gold-Plated Guitar Pick Set', 'Custom Embroidered Tour Cap'],
         inventory: 40,
@@ -234,7 +235,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'cin-tier-prem-vip',
         name: 'Premium VIP',
-        price: 1290,
+        price: 8900,
         description: 'Ultimate arena luxury experience with private lounge escort and gifts.',
         benefits: ['VIP Stage-Side Pit Lounge', 'Dedicated VIP Host Escort', 'Access to Signature VIP Club', 'Clapton Archival Art Print (Numbered)'],
         inventory: 20,
@@ -255,7 +256,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
     eventDate: '2026-09-11',
     doorsOpen: '18:00',
     concertTime: '19:30',
-    startingPrice: 185,
+    startingPrice: 1800,
     vipAvailability: true,
     meetAndGreetAvailability: true,
     status: 'upcoming',
@@ -269,7 +270,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'chi-tier-ga',
         name: 'General Admission',
-        price: 185,
+        price: 1800,
         description: 'Main arena floor standing with immersive sound staging.',
         benefits: ['Direct Stage Floor Standing', 'Chicago Blues Tour Commemorative Badge'],
         inventory: 300,
@@ -279,7 +280,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'chi-tier-std',
         name: 'Standard Seating',
-        price: 275,
+        price: 2750,
         description: '100-Level Lower Bowl center reserved seats.',
         benefits: ['100-Level Reserved Seats', 'Digital Program Guide', 'Souvenir Lanyard'],
         inventory: 250,
@@ -289,7 +290,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'chi-tier-prem',
         name: 'Premium Seating',
-        price: 450,
+        price: 3850,
         description: 'Club Level 200 executive seating with private concessions.',
         benefits: ['Club Level Reserved Seating', 'Express Merchandise Access', 'Numbered Collector Ticket'],
         inventory: 90,
@@ -300,7 +301,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'chi-tier-vip',
         name: 'VIP',
-        price: 850,
+        price: 6200,
         description: 'Front Floor Rows with Lexus Club VIP reception and dinner buffet.',
         benefits: ['Floor Rows 1-3 Center Stage', 'Lexus Club Hospitality & Open Bar', 'Limited Edition Tour Jacket', 'VIP Commemorative Credential'],
         inventory: 50,
@@ -311,7 +312,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'chi-tier-prem-vip',
         name: 'Premium VIP',
-        price: 1490,
+        price: 9800,
         description: 'The definitive Chicago blues luxury experience stage-side with VIP escort.',
         benefits: ['Stage-Side Diamond Pit Banquette', 'Private Concierge Escort', 'Backstage VIP Suite Access', 'Framed Archival Art Print', 'Vintage Vinyl Boxset'],
         inventory: 20,
@@ -332,7 +333,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
     eventDate: '2026-09-13',
     doorsOpen: '18:30',
     concertTime: '20:00',
-    startingPrice: 160,
+    startingPrice: 1800,
     vipAvailability: true,
     meetAndGreetAvailability: true,
     status: 'upcoming',
@@ -346,7 +347,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'mke-tier-ga',
         name: 'General Admission',
-        price: 160,
+        price: 1800,
         description: 'Floor standing with exceptional views of the stage.',
         benefits: ['Floor General Admission', 'Commemorative Badge'],
         inventory: 200,
@@ -356,7 +357,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'mke-tier-std',
         name: 'Standard Seating',
-        price: 240,
+        price: 2600,
         description: 'Lower Bowl reserved seats with clear center acoustics.',
         benefits: ['Lower Bowl 100-Level Seating', 'Digital Tour Book'],
         inventory: 220,
@@ -366,7 +367,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'mke-tier-vip',
         name: 'VIP',
-        price: 775,
+        price: 5750,
         description: 'Floor Front VIP with BMO Club hospitality reception.',
         benefits: ['Floor Rows 1-4 Center', 'BMO Club Food & Beverage Hospitality', 'Custom 2026 Tour Jacket', 'VIP Credential'],
         inventory: 40,
@@ -377,90 +378,13 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'mke-tier-prem-vip',
         name: 'Premium VIP',
-        price: 1320,
+        price: 9100,
         description: 'Ultra VIP experience with stage-side banquettes and gifts.',
         benefits: ['Front Row Banquette', 'Private VIP Host Escort', 'Signature Tour Lithograph', 'All-Inclusive Hospitality'],
         inventory: 15,
         available: 4,
         badge: 'Premier VIP',
         sectionInfo: 'Stage Front Diamond Box'
-      }
-    ]
-  },
-  {
-    id: 'ec-stpaul-2026',
-    eventName: 'Eric Clapton Concert',
-    artist: 'Eric Clapton',
-    tourName: 'North American Tour 2026',
-    venue: 'Grand Casino Arena',
-    city: 'St. Paul, Minnesota',
-    country: 'United States',
-    eventDate: '2026-09-15',
-    doorsOpen: '18:00',
-    concertTime: '19:30',
-    startingPrice: 1800,
-    vipAvailability: true,
-    meetAndGreetAvailability: true,
-    status: 'upcoming',
-    heroImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1200&auto=format&fit=crop',
-    description: 'Eric Clapton brings his signature blues artistry to Grand Casino Arena in St. Paul, Minnesota on Tuesday, September 15, 2026, joined by special guest blues legend Jimmie Vaughan.',
-    specialGuests: 'Jimmie Vaughan',
-    featured: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    ticketCategories: [
-      {
-        id: 'stp-tier-ga',
-        name: 'General Admission',
-        price: 1800,
-        description: 'Main arena floor standing with up-close sound immersion and central stage sightlines.',
-        benefits: ['Direct Stage Floor Access', 'Official Commemorative Tour Pass', 'Dedicated Arena Fast-Track Entrance'],
-        inventory: 120,
-        available: 65,
-        sectionInfo: 'Floor Standing Section A'
-      },
-      {
-        id: 'stp-tier-std',
-        name: 'Standard Seating',
-        price: 2250,
-        description: 'Reserved Lower Bowl prime tier seating with pristine acoustic sightlines.',
-        benefits: ['Lower Bowl 100-Level Reserved Seats', 'Digital Tour Program Guide', 'Souvenir Concert Lanyard'],
-        inventory: 150,
-        available: 78,
-        sectionInfo: 'Lower Bowl Sections 106-114'
-      },
-      {
-        id: 'stp-tier-vip',
-        name: 'VIP',
-        price: 3500,
-        description: 'Front Floor Seating with Grand Casino VIP Hospitality Club reception.',
-        benefits: ['Floor Rows 1-3 Center Stage', 'Grand Casino VIP Hospitality Suite Access', 'Pre-Show Sommelier Wine Tasting & Canapés', 'Custom Embroidered 2026 Tour Jacket', 'VIP Commemorative Laminate'],
-        inventory: 35,
-        available: 14,
-        badge: 'VIP Hospitality',
-        sectionInfo: 'Floor Rows 1-3 Center'
-      },
-      {
-        id: 'stp-tier-prem-vip',
-        name: 'Premium VIP',
-        price: 4800,
-        description: 'Ultra VIP Diamond Stage-Side Banquette with dedicated concierge and collector boxset.',
-        benefits: ['Stage-Front Diamond Banquette Seating', 'Private Concierge Escort Throughout Show', 'Artists & VIP Backstage Suite Access', 'Signed Framed Archival Tour Art Print', 'Vintage Remastered Vinyl Boxset', 'Top-Shelf Open Bar Hospitality'],
-        inventory: 12,
-        available: 4,
-        badge: 'Ultra Exclusive',
-        sectionInfo: 'Stage Front Diamond Box'
-      },
-      {
-        id: 'stp-tier-hosp',
-        name: 'Hospitality Package',
-        price: 2950,
-        description: 'Gourmet 3-course private arena dining before the show with sommelier pairings.',
-        benefits: ['3-Course Gourmet Dinner Pre-Show', 'Lower Tier Center Reserved Seating', 'Post-Concert Dessert Bar Access', 'Official 2026 Tour Book'],
-        inventory: 25,
-        available: 9,
-        badge: 'Fine Dining',
-        sectionInfo: 'Grand Casino Arena Chef Suite'
       }
     ]
   },
@@ -475,7 +399,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
     eventDate: '2026-09-19',
     doorsOpen: '18:30',
     concertTime: '20:00',
-    startingPrice: 165,
+    startingPrice: 1800,
     vipAvailability: true,
     meetAndGreetAvailability: true,
     status: 'upcoming',
@@ -489,7 +413,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'kc-tier-ga',
         name: 'General Admission',
-        price: 165,
+        price: 1800,
         description: 'Floor standing with full central sightlines.',
         benefits: ['Arena Floor Standing Entry', 'Commemorative KC Tour Pin'],
         inventory: 200,
@@ -499,7 +423,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'kc-tier-std',
         name: 'Standard Seating',
-        price: 250,
+        price: 2650,
         description: 'Lower Bowl center reserved seating.',
         benefits: ['Lower Bowl 100-Level Reserved Seats', 'Digital Concert Program'],
         inventory: 220,
@@ -509,7 +433,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'kc-tier-vip',
         name: 'VIP',
-        price: 795,
+        price: 5850,
         description: 'Front Floor Rows with Founders Club VIP pre-show dining.',
         benefits: ['Floor Rows 1-3 Center', 'Founders Club Dining & Bar', 'Embroidered Tour Jacket', 'Collector Acrylic Ticket'],
         inventory: 40,
@@ -520,7 +444,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'kc-tier-prem-vip',
         name: 'Premium VIP',
-        price: 1380,
+        price: 9400,
         description: 'The highest tier Kansas City arena luxury experience with private lounge.',
         benefits: ['Stage-Side Ultra VIP Banquette', 'Private Concierge Escort', 'Backstage VIP Suite Access', 'Vintage Vinyl Boxset', 'Top-Shelf Bar & Gastronomy'],
         inventory: 15,
@@ -541,7 +465,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
     eventDate: '2026-09-26',
     doorsOpen: '16:00',
     concertTime: '17:30',
-    startingPrice: 225,
+    startingPrice: 1800,
     vipAvailability: true,
     meetAndGreetAvailability: true,
     status: 'upcoming',
@@ -555,7 +479,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'atx-d1-tier-ga',
         name: 'General Admission',
-        price: 225,
+        price: 1800,
         description: 'Full day festival floor standing with festival village access.',
         benefits: ['Floor General Admission', 'Crossroads 2026 Official Festival Wristband', 'Village Stage Access'],
         inventory: 350,
@@ -565,7 +489,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'atx-d1-tier-std',
         name: 'Standard Seating',
-        price: 350,
+        price: 2950,
         description: 'Lower Bowl Reserved seating with full panoramic soundstage views.',
         benefits: ['Lower Bowl Reserved Seating', 'Official 100-Page Festival Program Guide'],
         inventory: 300,
@@ -575,7 +499,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'atx-d1-tier-prem',
         name: 'Premium Seating',
-        price: 550,
+        price: 4200,
         description: 'Dell Technologies Club premium seating with fast-track lounge entry.',
         benefits: ['Dell Club Reserved Seat', 'Air-Conditioned Club Lounge Access', 'Collector Acrylic Festival Pass'],
         inventory: 100,
@@ -586,7 +510,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'atx-d1-tier-vip',
         name: 'VIP',
-        price: 995,
+        price: 6800,
         description: 'Crossroads Patron VIP with German-American Bank Club dining and artist lounge access.',
         benefits: ['Floor Rows 1-3 Prime Seating', 'All-Day Chef Dining & Sommelier Wine Bar', 'Exclusive Crossroads Embroidered Jacket', 'Signed Replica Crossroads Pickguard', 'Commemorative VIP Laminate'],
         inventory: 50,
@@ -597,7 +521,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'atx-d1-tier-prem-vip',
         name: 'Premium VIP',
-        price: 1750,
+        price: 11500,
         description: 'Ultra Diamond Crossroads Patron with stage-side banquettes and private guitar museum reception.',
         benefits: ['Stage-Side Diamond Banquette', 'Private VIP Host Escort', 'Access to Vintage Guitar Exhibition & VIP Lounge', 'Framed Crossroads 2026 Fine-Art Print (Numbered)', 'All-Inclusive Top-Shelf Hospitality'],
         inventory: 20,
@@ -618,7 +542,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
     eventDate: '2026-09-27',
     doorsOpen: '16:00',
     concertTime: '17:30',
-    startingPrice: 225,
+    startingPrice: 1800,
     vipAvailability: true,
     meetAndGreetAvailability: true,
     status: 'upcoming',
@@ -632,7 +556,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'atx-d2-tier-ga',
         name: 'General Admission',
-        price: 225,
+        price: 1800,
         description: 'Grand finale floor standing with full festival village access.',
         benefits: ['Floor General Admission', 'Crossroads Finale Wristband', 'Guitar Exhibition Access'],
         inventory: 350,
@@ -642,7 +566,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'atx-d2-tier-std',
         name: 'Standard Seating',
-        price: 350,
+        price: 2950,
         description: 'Lower Bowl Reserved seating for the epic festival finale.',
         benefits: ['Lower Bowl Reserved Seating', 'Official 100-Page Festival Program Guide'],
         inventory: 300,
@@ -652,7 +576,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'atx-d2-tier-prem',
         name: 'Premium Seating',
-        price: 550,
+        price: 4200,
         description: 'Dell Technologies Club premium seating with fast-track lounge entry.',
         benefits: ['Dell Club Reserved Seat', 'Air-Conditioned Club Lounge Access', 'Collector Acrylic Finale Pass'],
         inventory: 100,
@@ -663,7 +587,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'atx-d2-tier-vip',
         name: 'VIP',
-        price: 995,
+        price: 6800,
         description: 'Crossroads Patron VIP with German-American Bank Club dining and artist lounge access.',
         benefits: ['Floor Rows 1-3 Prime Seating', 'All-Day Chef Dining & Sommelier Wine Bar', 'Exclusive Crossroads Embroidered Jacket', 'Signed Replica Crossroads Pickguard', 'Commemorative VIP Laminate'],
         inventory: 50,
@@ -674,7 +598,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
       {
         id: 'atx-d2-tier-prem-vip',
         name: 'Premium VIP',
-        price: 1750,
+        price: 11500,
         description: 'Ultra Diamond Crossroads Patron with stage-side banquettes and private guitar museum reception.',
         benefits: ['Stage-Side Diamond Banquette', 'Private VIP Host Escort', 'Access to Vintage Guitar Exhibition & VIP Lounge', 'Framed Crossroads 2026 Fine-Art Print (Numbered)', 'All-Inclusive Top-Shelf Hospitality'],
         inventory: 20,
@@ -691,7 +615,7 @@ export const INITIAL_VIP_PACKAGES: VIPExperiencePackage[] = [
     id: 'pkg-slowhand-gold',
     name: 'The “Slowhand” Gold Hospitality Pass',
     tagline: 'The definitive concert luxury experience with front orchestra seating and gourmet hospitality.',
-    startingPrice: 780,
+    startingPrice: 5800,
     heroImage: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1000&auto=format&fit=crop',
     badge: 'Most Popular',
     includes: [
@@ -718,7 +642,7 @@ export const INITIAL_VIP_PACKAGES: VIPExperiencePackage[] = [
     id: 'pkg-crossroads-diamond',
     name: 'The “Crossroads” Ultra Diamond Suite',
     tagline: 'Unprecedented access with stage-side banquette, collector vinyl, and private escort.',
-    startingPrice: 1450,
+    startingPrice: 12500,
     heroImage: 'https://images.unsplash.com/photo-1464375117522-1311d6a5b81f?q=80&w=1000&auto=format&fit=crop',
     badge: 'Ultra Exclusive (Max 12 Guests/Night)',
     includes: [
@@ -746,7 +670,7 @@ export const INITIAL_VIP_PACKAGES: VIPExperiencePackage[] = [
     id: 'pkg-layla-lounge',
     name: 'The “Layla” Acoustic & Vinyl Lounge Experience',
     tagline: 'A warm, relaxed atmosphere featuring rare Clapton vinyl listening stations and premium stalls seating.',
-    startingPrice: 520,
+    startingPrice: 2850,
     heroImage: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=1000&auto=format&fit=crop',
     badge: 'Collector Choice',
     includes: [

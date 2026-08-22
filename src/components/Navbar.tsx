@@ -50,7 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'vip', label: 'VIP Experiences', icon: Crown },
     { id: 'meet-greet', label: 'Meet & Greet', icon: Sparkles },
     { id: 'rewards', label: 'Fan Rewards', icon: Gift },
-    { id: 'concierge', label: 'Fan Concierge', icon: Headphones },
+    { id: 'concierge', label: 'Customer Care & Chat', icon: Headphones },
   ];
 
   return (
