@@ -56,11 +56,13 @@ async function captureElementToPng(element: HTMLElement): Promise<string> {
   try {
     // Primary method: html-to-image uses browser native rendering engine (SVG foreignObject), completely avoiding custom CSS color parser bugs like oklab
     const dataUrl = await toPng(element, {
-      quality: 1,
+      quality: 0.98,
       pixelRatio: 2.5,
       backgroundColor: '#0B0B0D',
       cacheBust: true,
-      skipAutoScale: true
+      skipAutoScale: true,
+      skipFonts: true,
+      fontEmbedCSS: '',
     });
     if (dataUrl && dataUrl.length > 100) {
       return dataUrl;
