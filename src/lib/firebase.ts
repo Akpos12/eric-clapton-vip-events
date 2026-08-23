@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import config from '../../firebase-applet-config.json';
 
@@ -12,6 +12,16 @@ const app = getApps().length > 0 ? getApp() : initializeApp({
   appId: config.appId,
 });
 
-export const db = getFirestore(app, config.firestoreDatabaseId || undefined);
+let dbInstance: Firestore;
+try {
+  dbInstance = initializeFirestore(app, {
+    experimentalAutoDetectLongPolling: true,
+    ignoreUndefinedProperties: true,
+  }, config.firestoreDatabaseId || undefined);
+} catch {
+  dbInstance = getFirestore(app, config.firestoreDatabaseId || undefined);
+}
+
+export const db = dbInstance;
 export const auth = getAuth(app);
 export default app;

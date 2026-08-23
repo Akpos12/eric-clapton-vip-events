@@ -219,7 +219,7 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="e.g. #EC-2026-89421 or MGR-2026-44109 or alexwtchmn@gmail.com"
+                  placeholder="e.g. #EC-2026-89421 or MGR-2026-44109 or fan@example.com"
                   className="w-full pl-10 pr-4 py-2.5 bg-[#0B0B0D] border border-white/10 text-sm font-mono text-[#F5F5DC] placeholder-[#F5F5DC]/30 focus:outline-none focus:border-[#D4AF37]"
                 />
               </div>
@@ -240,7 +240,7 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                 onClick={() => { setSearchQuery('EC-2026-89421'); }}
                 className="px-2 py-0.5 bg-[#1A1A1D] hover:bg-white/10 text-[#D4AF37] font-mono border border-white/10 cursor-pointer"
               >
-                #EC-2026-89421 (St. Paul Pass)
+                #EC-2026-89421 (Detroit Pass)
               </button>
               <button
                 type="button"

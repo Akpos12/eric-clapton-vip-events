@@ -119,9 +119,10 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
   // Price calculations
   const unitPrice = currentTier ? currentTier.price : event.startingPrice;
   const subtotal = unitPrice * quantity;
-  const serviceFee = Math.round(subtotal * 0.05 * 100) / 100; // 5% service fee
-  const facilityFee = 15 * quantity;
-  const taxes = Math.round(subtotal * 0.08 * 100) / 100; // 8% local tax
+  // User mandate: total addition must not exceed $150 (making $1,800 ticket total $1,950)
+  const serviceFee = 100; // Flat VIP Concierge & Hospitality Handling
+  const facilityFee = 50; // Venue Security & Gate Access Handling
+  const taxes = 0; // Applicable local & state taxes included in ticket pricing
   const total = subtotal + serviceFee + facilityFee + taxes;
 
   const pricing: PricingBreakdown = {
@@ -502,7 +503,7 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
                       required
                       value={attendee.email}
                       onChange={(e) => setAttendee({ ...attendee, email: e.target.value })}
-                      placeholder="e.g. alexwtchmn@gmail.com"
+                      placeholder="e.g. fan@example.com"
                       className="w-full pl-9 pr-4 py-2.5 bg-[#0B0B0D] border border-white/10 text-sm text-[#F5F5DC] focus:outline-none focus:border-[#D4AF37]"
                     />
                   </div>
@@ -781,13 +782,27 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
               </div>
 
               {/* Order Summary Confirmation */}
-              <div className="p-4 bg-[#0B0B0D] border border-white/10 text-xs space-y-1.5">
+              <div className="p-4 bg-[#0B0B0D] border border-white/10 text-xs space-y-2">
                 <div className="flex justify-between font-serif font-bold text-[#F5F5DC]">
                   <span>{event.eventName}</span>
                   <span className="font-mono text-[#D4AF37]">${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
                 </div>
                 <div className="text-[#F5F5DC]/50 font-mono text-[11px]">
-                  {quantity}x {currentTier.name} | {event.eventDate} | {attendee.fullName}
+                  {quantity}x {currentTier.name} (${unitPrice.toLocaleString()} ea) | {event.eventDate} | {attendee.fullName}
+                </div>
+                <div className="pt-2 border-t border-white/5 space-y-1 font-mono text-[11px] text-[#F5F5DC]/70">
+                  <div className="flex justify-between">
+                    <span>Ticket Passes Subtotal:</span>
+                    <span>${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>VIP Concierge & Venue Handling:</span>
+                    <span className="text-[#D4AF37]">+$150.00 (Capped)</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-400/90">
+                    <span>Local & Arena Taxes:</span>
+                    <span>Included ($0.00)</span>
+                  </div>
                 </div>
               </div>
 

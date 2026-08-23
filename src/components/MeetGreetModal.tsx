@@ -223,7 +223,7 @@ export const MeetGreetModal: React.FC<MeetGreetModalProps> = ({
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="alexwtchmn@gmail.com"
+                      placeholder="fan@example.com"
                       className="w-full pl-9 pr-4 py-2.5 bg-[#0B0B0D] border border-white/10 text-sm text-[#F5F5DC] focus:outline-none focus:border-[#D4AF37]"
                     />
                   </div>

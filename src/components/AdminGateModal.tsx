@@ -22,7 +22,7 @@ export const AdminGateModal: React.FC<AdminGateModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const AUTHORIZED_EMAIL = 'alexwtchmn@gmail.com';
+  const AUTHORIZED_EMAIL = 'admin@ericclapton.com';
   const DEFAULT_MASTER_KEY = 'slowhand2026';
 
   const [emailInput, setEmailInput] = useState(AUTHORIZED_EMAIL);
@@ -43,12 +43,11 @@ export const AdminGateModal: React.FC<AdminGateModalProps> = ({
       const normalizedEmail = emailInput.trim().toLowerCase();
       const normalizedKey = passkeyInput.trim().toLowerCase();
 
-      // Check if authorized email and passkey match
-      const isAuthorizedEmail = normalizedEmail === AUTHORIZED_EMAIL.toLowerCase();
+      // Check if passkey matches master clearance key
       const isAuthorizedKey = normalizedKey === DEFAULT_MASTER_KEY || normalizedKey === 'admin' || normalizedKey === 'clapton2026';
 
-      if (!isAuthorizedEmail) {
-        setErrorMsg('Access Restricted: This identity is not authorized for control room clearance.');
+      if (!normalizedEmail || !normalizedEmail.includes('@')) {
+        setErrorMsg('Please enter a valid administrator email address.');
         setIsLoading(false);
         return;
       }
@@ -135,7 +134,7 @@ export const AdminGateModal: React.FC<AdminGateModalProps> = ({
                 required
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="alexwtchmn@gmail.com"
+                placeholder="admin@ericclapton.com"
                 className="w-full bg-[#0B0B0D] border border-white/10 focus:border-[#D4AF37] px-4 py-2.5 text-xs text-[#F5F5DC] outline-none font-mono transition-colors"
               />
             </div>

@@ -158,7 +158,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleApprovePayment = async (orderId: string) => {
     setStatusActionLoading(true);
     try {
-      await approveTicketOrderPayment(orderId, 'alexwtchmn@gmail.com', 'Approved by Tour Administrator');
+      await approveTicketOrderPayment(orderId, 'admin@ericclapton.com', 'Approved by Tour Administrator');
       onDataChanged();
       if (viewingProofOrder?.id === orderId) {
         setViewingProofOrder(null);
@@ -318,7 +318,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="flex flex-wrap items-center gap-2 relative z-10">
           <div className="px-3 py-1.5 bg-[#0B0B0D] border border-[#D4AF37]/30 text-[11px] font-mono text-[#D4AF37] flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>alexwtchmn@gmail.com</span>
+            <span>Tour Operations Clearance</span>
           </div>
 
           <button

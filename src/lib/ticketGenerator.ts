@@ -1,6 +1,7 @@
 import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
+import html2canvasPro from 'html2canvas-pro';
 import { TicketOrder } from '../types';
 
 /**
@@ -24,6 +25,48 @@ export async function generateTicketQRCode(payload: string): Promise<string> {
 }
 
 /**
+ * Capture an element as a PNG data URL without color parsing issues (oklab/oklch compatible)
+ */
+async function captureElementToPng(element: HTMLElement): Promise<string> {
+  try {
+    // Primary method: html-to-image uses browser native rendering engine (SVG foreignObject), completely avoiding custom CSS color parser bugs like oklab
+    const dataUrl = await toPng(element, {
+      quality: 1,
+      pixelRatio: 2.5,
+      backgroundColor: '#0B0B0D',
+      cacheBust: true,
+      skipAutoScale: true
+    });
+    if (dataUrl && dataUrl.length > 100) {
+      return dataUrl;
+    }
+  } catch (err) {
+    console.warn('html-to-image capture fallback triggered:', err);
+  }
+
+  // Secondary fallback: html2canvas-pro with color normalization
+  try {
+    const canvas = await html2canvasPro(element, {
+      scale: 2.5,
+      useCORS: true,
+      backgroundColor: '#0B0B0D',
+      logging: false,
+      onclone: (clonedDoc) => {
+        // Ensure background colors in clone are explicit hex / rgba
+        const clonedEl = clonedDoc.getElementById(element.id);
+        if (clonedEl) {
+          clonedEl.style.backgroundColor = '#0B0B0D';
+        }
+      }
+    });
+    return canvas.toDataURL('image/png');
+  } catch (err) {
+    console.error('html2canvas-pro capture fallback also failed:', err);
+    throw err;
+  }
+}
+
+/**
  * Export high-resolution printable PDF ticket for Eric Clapton VIP Experience
  */
 export async function downloadTicketPDF(ticketElementId: string, order: TicketOrder): Promise<void> {
@@ -34,15 +77,8 @@ export async function downloadTicketPDF(ticketElementId: string, order: TicketOr
   }
 
   try {
-    // Generate canvas with optimal scale
-    const canvas = await html2canvas(element, {
-      scale: 2.5,
-      useCORS: true,
-      backgroundColor: '#0B0B0D',
-      logging: false
-    });
+    const imgData = await captureElementToPng(element);
 
-    const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -52,21 +88,24 @@ export async function downloadTicketPDF(ticketElementId: string, order: TicketOr
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    // Add security header
+    // Add luxury dark canvas background
     pdf.setFillColor(11, 11, 13);
     pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
 
     const imgProps = pdf.getImageProperties(imgData);
-    const renderWidth = pdfWidth - 24; // 12mm padding
+    const renderWidth = pdfWidth - 24; // 12mm margins
     const renderHeight = (imgProps.height * renderWidth) / imgProps.width;
 
-    pdf.addImage(imgData, 'PNG', 12, 16, renderWidth, renderHeight);
+    // Center vertically if it fits nicely, otherwise start with top padding
+    const startY = renderHeight < pdfHeight - 40 ? 18 : 12;
+
+    pdf.addImage(imgData, 'PNG', 12, startY, renderWidth, renderHeight);
 
     // Add bottom security stamp
     pdf.setTextColor(180, 160, 90);
     pdf.setFontSize(8);
     pdf.text(
-      `AUTHENTICATION ID: ${order.id} | CRYPTOGRAPHIC CHECKSUM: ${order.transactionId || 'VERIFIED-GATE-PASS'} | ISSUED: ${new Date().toUTCString()}`,
+      `AUTHENTICATION ID: ${order.id} | CHECKSUM: ${order.transactionId || 'VERIFIED-GATE-PASS'} | ISSUED: ${new Date().toUTCString()}`,
       12,
       pdfHeight - 10
     );
@@ -76,3 +115,4 @@ export async function downloadTicketPDF(ticketElementId: string, order: TicketOr
     console.error('Error generating PDF ticket:', error);
   }
 }
+

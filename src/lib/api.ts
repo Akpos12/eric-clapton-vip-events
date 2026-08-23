@@ -32,13 +32,13 @@ import {
 } from '../data/mockData';
 
 // Local storage fallback keys for instant responsiveness if offline or initial setup
-const LS_EVENTS_KEY = 'ec_vip_events_store_v7';
-const LS_ORDERS_KEY = 'ec_vip_orders_store_v7';
-const LS_MGR_KEY = 'ec_vip_mgr_store_v7';
-const LS_SUPPORT_KEY = 'ec_vip_support_store_v7';
-const LS_VIP_KEY = 'ec_vip_packages_store_v7';
-const LS_REWARDS_KEY = 'ec_vip_rewards_store_v7';
-const LS_PAYMENT_METHODS_KEY = 'ec_vip_payment_methods_store_v7';
+const LS_EVENTS_KEY = 'ec_vip_events_store_v8';
+const LS_ORDERS_KEY = 'ec_vip_orders_store_v8';
+const LS_MGR_KEY = 'ec_vip_mgr_store_v8';
+const LS_SUPPORT_KEY = 'ec_vip_support_store_v8';
+const LS_VIP_KEY = 'ec_vip_packages_store_v8';
+const LS_REWARDS_KEY = 'ec_vip_rewards_store_v8';
+const LS_PAYMENT_METHODS_KEY = 'ec_vip_payment_methods_store_v8';
 
 // Timeout helper to prevent Firestore network stalls
 async function withTimeout<T>(promise: Promise<T>, timeoutMs = 2000): Promise<T> {
@@ -132,6 +132,11 @@ export async function seedInitialDataIfNeeded() {
       await setDoc(doc(db, 'payment_methods', pm.id), pm, { merge: true });
     }
 
+    // Seed sample orders ensuring pending verification status
+    for (const ord of SAMPLE_ORDERS) {
+      await setDoc(doc(db, 'ticket_orders', ord.id), ord, { merge: true });
+    }
+
     if (snap.empty) {
       // Seed VIP packages
       for (const vip of INITIAL_VIP_PACKAGES) {
@@ -140,10 +145,6 @@ export async function seedInitialDataIfNeeded() {
       // Seed Giveaways
       for (const rw of INITIAL_GIVEAWAYS) {
         await setDoc(doc(db, 'giveaways', rw.id), rw);
-      }
-      // Seed sample orders
-      for (const ord of SAMPLE_ORDERS) {
-        await setDoc(doc(db, 'ticket_orders', ord.id), ord);
       }
       // Seed meet greets
       for (const mgr of SAMPLE_MEET_GREETS) {
