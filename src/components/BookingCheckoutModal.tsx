@@ -13,27 +13,28 @@ import {
   Phone, 
   Globe, 
   Lock, 
-  Sparkles,
-  ArrowRight,
-  ArrowLeft,
-  DollarSign,
-  AlertCircle,
-  UploadCloud,
-  Camera,
-  Image as ImageIcon,
-  Copy,
-  Check,
-  Building2,
-  Wallet,
-  Smartphone,
-  Eye,
-  FileCheck,
-  MessageSquare
+  Sparkles, 
+  ArrowRight, 
+  ArrowLeft, 
+  DollarSign, 
+  AlertCircle, 
+  UploadCloud, 
+  Camera, 
+  Image as ImageIcon, 
+  Copy, 
+  Check, 
+  Building2, 
+  Wallet, 
+  Smartphone, 
+  Eye, 
+  FileCheck, 
+  MessageSquare,
+  Download
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ConcertEvent, TicketTierConfig, TicketOrder, TicketAttendee, PricingBreakdown, PaymentMethodConfig } from '../types';
 import { createTicketOrder, getPaymentMethods } from '../lib/api';
-import { generateTicketQRCode } from '../lib/ticketGenerator';
+import { generateTicketQRCode, downloadTicketPDF, downloadTicketPNG } from '../lib/ticketGenerator';
 
 interface BookingCheckoutModalProps {
   isOpen: boolean;
@@ -81,6 +82,9 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<TicketOrder | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportingPng, setIsExportingPng] = useState(false);
+  const [downloadSuccessMsg, setDownloadSuccessMsg] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -861,7 +865,7 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
                   </span>
                   <span className="px-2.5 py-1 text-xs font-mono font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5" />
-                    PAYMENT PENDING APPROVAL
+                    BOOKING LOGGED (PENDING AUDIT)
                   </span>
                 </div>
 
@@ -896,15 +900,22 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
                   </div>
 
                   <div className="flex flex-col items-center justify-center p-3 bg-[#1A1A1D] border border-white/10 text-center space-y-2">
-                    <Lock className="w-8 h-8 text-amber-400 mx-auto" />
-                    <span className="text-[10px] font-mono text-amber-300 font-bold uppercase tracking-wider">
-                      Pass Barcode Locked
+                    <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                    <span className="text-[10px] font-mono text-emerald-300 font-bold uppercase tracking-wider">
+                      Pass Generated
                     </span>
                     <span className="text-[9px] text-[#F5F5DC]/50 font-mono">
-                      Unlocks upon admin approval
+                      Ref: #{completedOrder.id}
                     </span>
                   </div>
                 </div>
+
+                {downloadSuccessMsg && (
+                  <div className="p-3 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2 font-mono">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <div>{downloadSuccessMsg}</div>
+                  </div>
+                )}
 
                 <div className="p-3 bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs font-mono">
                   💡 Tip: You can check pass status anytime in the top navigation under <strong>Check Passes</strong> using your reference <strong>#{completedOrder.id}</strong>.
@@ -913,27 +924,84 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-6 py-2.5 bg-[#1A1A1D] hover:bg-white/10 text-[#F5F5DC] font-bold text-xs uppercase tracking-widest font-mono border border-white/10 transition-colors cursor-pointer w-full sm:w-auto"
-                >
-                  Close Window
-                </button>
-
-                {onOpenConciergeWithEmail && (
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      onOpenConciergeWithEmail(completedOrder.attendee.email, completedOrder.id);
-                      onClose();
+                    onClick={async () => {
+                      if (!completedOrder) return;
+                      setIsExportingPdf(true);
+                      setDownloadSuccessMsg('');
+                      try {
+                        await downloadTicketPDF('checkout-pending-pass', completedOrder);
+                        setDownloadSuccessMsg(`Official Ticket PDF for #${completedOrder.id} downloaded!`);
+                        setTimeout(() => setDownloadSuccessMsg(''), 6000);
+                      } catch (e) {
+                        console.error(e);
+                        try {
+                          await downloadTicketPDF('', completedOrder);
+                          setDownloadSuccessMsg(`Official Ticket PDF for #${completedOrder.id} generated!`);
+                          setTimeout(() => setDownloadSuccessMsg(''), 6000);
+                        } catch (err2) {
+                          console.error(err2);
+                        }
+                      } finally {
+                        setIsExportingPdf(false);
+                      }
                     }}
-                    className="px-6 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition-colors cursor-pointer w-full sm:w-auto shadow-lg shadow-[#D4AF37]/20"
+                    disabled={isExportingPdf}
+                    className="px-5 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
                   >
-                    <MessageSquare className="w-4 h-4 text-black" />
-                    <span>Chat / Message Customer Care</span>
+                    <Download className="w-4 h-4" />
+                    <span>{isExportingPdf ? 'Generating PDF...' : 'Download Ticket (PDF)'}</span>
                   </button>
-                )}
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!completedOrder) return;
+                      setIsExportingPng(true);
+                      setDownloadSuccessMsg('');
+                      try {
+                        await downloadTicketPNG('checkout-pending-pass', completedOrder);
+                        setDownloadSuccessMsg(`Pass image saved for #${completedOrder.id}!`);
+                        setTimeout(() => setDownloadSuccessMsg(''), 6000);
+                      } catch (e) {
+                        console.error(e);
+                      } finally {
+                        setIsExportingPng(false);
+                      }
+                    }}
+                    disabled={isExportingPng}
+                    className="px-4 py-2.5 bg-[#1A1A1D] hover:bg-white/10 text-[#F5F5DC] border border-white/10 font-bold text-xs uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <ImageIcon className="w-4 h-4 text-[#D4AF37]" />
+                    <span>{isExportingPng ? 'Saving...' : 'Save PNG Pass'}</span>
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-5 py-2.5 bg-[#1A1A1D] hover:bg-white/10 text-[#F5F5DC] font-bold text-xs uppercase tracking-widest font-mono border border-white/10 transition-colors cursor-pointer"
+                  >
+                    Close Window
+                  </button>
+
+                  {onOpenConciergeWithEmail && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOpenConciergeWithEmail(completedOrder.attendee.email, completedOrder.id);
+                        onClose();
+                      }}
+                      className="px-5 py-2.5 bg-[#121214] hover:bg-[#1A1A1D] text-[#D4AF37] border border-[#D4AF37]/50 font-bold text-xs uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <MessageSquare className="w-4 h-4 text-[#D4AF37]" />
+                      <span>Message Support</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

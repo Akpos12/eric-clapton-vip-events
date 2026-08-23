@@ -22,11 +22,12 @@ import {
   Building2,
   MessageSquare,
   Copy,
-  Check
+  Check,
+  Image as ImageIcon
 } from 'lucide-react';
 import { TicketOrder, MeetGreetRequest } from '../types';
 import { getOrderById, getMeetGreetById, searchTickets } from '../lib/api';
-import { downloadTicketPDF, generateTicketQRCode } from '../lib/ticketGenerator';
+import { downloadTicketPDF, downloadTicketPNG, generateTicketQRCode } from '../lib/ticketGenerator';
 
 interface CheckTicketModalProps {
   isOpen: boolean;
@@ -49,7 +50,9 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
   const [meetGreet, setMeetGreet] = useState<MeetGreetRequest | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [downloadSuccessMsg, setDownloadSuccessMsg] = useState('');
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportingPng, setIsExportingPng] = useState(false);
   const [viewProofModal, setViewProofModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -69,6 +72,7 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
 
     setLoading(true);
     setErrorMsg('');
+    setDownloadSuccessMsg('');
     setTicketOrder(null);
     setMeetGreet(null);
     setQrCodeUrl('');
@@ -94,12 +98,8 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
 
         if (order) {
           setTicketOrder(order);
-          // Only generate active barcode if payment is confirmed
-          const isApproved = order.paymentStatus === 'Payment Confirmed' || order.ticketStatus === 'TICKET ISSUED';
-          if (isApproved) {
-            const qr = await generateTicketQRCode(order);
-            setQrCodeUrl(qr);
-          }
+          const qr = await generateTicketQRCode(order);
+          setQrCodeUrl(qr);
         } else {
           // Fallback check if it might be an MGR
           const mgr = await getMeetGreetById(query);
@@ -125,16 +125,44 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
 
   const handleDownloadPDF = async () => {
     if (!ticketOrder) return;
-    const isApproved = ticketOrder.paymentStatus === 'Payment Confirmed' || ticketOrder.ticketStatus === 'TICKET ISSUED';
-    if (!isApproved) return;
 
     setIsExportingPdf(true);
+    setErrorMsg('');
+    setDownloadSuccessMsg('');
     try {
       await downloadTicketPDF('digital-pass-card-render', ticketOrder);
+      setDownloadSuccessMsg(`Official Ticket PDF for #${ticketOrder.id} downloaded successfully!`);
+      setTimeout(() => setDownloadSuccessMsg(''), 6000);
     } catch (err) {
-      console.error(err);
+      console.error('Download ticket error:', err);
+      setErrorMsg('Ticket generation encountered a delay. Retrying directly with native document generator...');
+      try {
+        await downloadTicketPDF('', ticketOrder);
+        setDownloadSuccessMsg(`Official Ticket PDF for #${ticketOrder.id} generated & saved!`);
+        setTimeout(() => setDownloadSuccessMsg(''), 6000);
+      } catch (fallbackErr) {
+        console.error('Fallback error:', fallbackErr);
+        setErrorMsg('Unable to download PDF. Please contact concierge support.');
+      }
     } finally {
       setIsExportingPdf(false);
+    }
+  };
+
+  const handleDownloadPNG = async () => {
+    if (!ticketOrder) return;
+    setIsExportingPng(true);
+    setErrorMsg('');
+    setDownloadSuccessMsg('');
+    try {
+      await downloadTicketPNG('digital-pass-card-render', ticketOrder);
+      setDownloadSuccessMsg(`Pass image saved for #${ticketOrder.id}!`);
+      setTimeout(() => setDownloadSuccessMsg(''), 6000);
+    } catch (err) {
+      console.error('PNG download error:', err);
+      setErrorMsg('Unable to save pass image. Please try downloading as PDF.');
+    } finally {
+      setIsExportingPng(false);
     }
   };
 
@@ -160,7 +188,7 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
     return (
       <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 font-mono">
         <Clock className="w-3.5 h-3.5" />
-        PAYMENT PENDING APPROVAL
+        BOOKING CONFIRMED (AUDIT PENDING)
       </span>
     );
   };
@@ -285,6 +313,14 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
             </div>
           )}
 
+          {/* Download Success Banner */}
+          {downloadSuccessMsg && (
+            <div className="p-4 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2.5 font-mono">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div>{downloadSuccessMsg}</div>
+            </div>
+          )}
+
           {/* 1. Ticket Order Found Display */}
           {ticketOrder && (
             <div className="space-y-4">
@@ -294,10 +330,10 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                 <div className="p-4 bg-amber-500/10 border border-amber-500/40 space-y-2">
                   <div className="flex items-center gap-2 text-amber-300 font-serif font-bold text-sm">
                     <Clock className="w-4 h-4" />
-                    <span>Payment Under Administrator Verification</span>
+                    <span>Booking Logged — Tour Audit In Progress</span>
                   </div>
                   <p className="text-xs text-[#F5F5DC]/80 font-light leading-relaxed">
-                    Your proof of payment has been submitted and is currently being audited by the tour administrator in the Control Room. Your scannable gate barcode and printable PDF download will unlock as soon as your payment is approved.
+                    Your official booking reference has been registered. You can download and save your official concert pass PDF and digital pass image below. The gate admission system is actively linked to your booking reference.
                   </p>
                   {ticketOrder.adminNotes && (
                     <div className="p-2 bg-[#0B0B0D] border border-white/10 text-xs text-[#F5F5DC]/70 font-mono">
@@ -308,7 +344,7 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
               ) : (
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2 font-mono">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Payment Approved & Verified! Official gate passes are active and ready for download.</span>
+                  <span>Payment Approved & Verified! Official gate passes are active and ready for immediate gate check-in.</span>
                 </div>
               )}
 
@@ -376,10 +412,10 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                     </div>
                   </div>
 
-                  {/* QR code box or Locked Box */}
+                  {/* QR code box */}
                   <div className="flex flex-col items-center justify-center p-3 text-center">
-                    {isOrderApproved && qrCodeUrl ? (
-                      <div className="bg-white p-2 text-center">
+                    {qrCodeUrl ? (
+                      <div className="bg-white p-2 text-center shadow-lg">
                         <img
                           src={qrCodeUrl}
                           alt="Eric Clapton Concert Ticket QR"
@@ -390,17 +426,14 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                           ERIC CLAPTON GATE PASS
                         </span>
                         <span className="text-[8px] font-mono text-zinc-600 block mt-0.5 max-w-[130px] leading-tight">
-                          Scan with camera to view live pass
+                          {isOrderApproved ? 'Live gate scanner pass' : 'Verified reservation barcode'}
                         </span>
                       </div>
                     ) : (
                       <div className="w-full bg-[#1A1A1D] border border-amber-500/30 p-4 space-y-2">
-                        <Lock className="w-8 h-8 text-amber-400 mx-auto" />
-                        <span className="text-[10px] font-mono text-amber-300 font-bold uppercase tracking-wider block">
-                          Barcode Locked
-                        </span>
-                        <span className="text-[9px] text-[#F5F5DC]/50 font-mono block">
-                          Awaiting Admin Approval
+                        <QrCode className="w-8 h-8 text-[#D4AF37] mx-auto animate-pulse" />
+                        <span className="text-[10px] font-mono text-[#D4AF37] font-bold uppercase tracking-wider block">
+                          Generating Pass
                         </span>
                       </div>
                     )}
@@ -439,34 +472,36 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  {isOrderApproved ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={handleDownloadPDF}
-                        disabled={isExportingPdf}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer"
-                      >
-                        <Download className="w-4 h-4" />
-                        <span>{isExportingPdf ? 'Generating PDF...' : 'Download Printable PDF Ticket'}</span>
-                      </button>
+                  <button
+                    type="button"
+                    onClick={handleDownloadPDF}
+                    disabled={isExportingPdf}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{isExportingPdf ? 'Generating PDF Ticket...' : 'Download Printable PDF Ticket'}</span>
+                  </button>
 
-                      <button
-                        type="button"
-                        onClick={handleCopyLink}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-[#121214] hover:bg-[#1A1A1D] text-[#F5F5DC] border border-white/10 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer"
-                        title="Copy direct verification link for this concert pass"
-                      >
-                        {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-[#D4AF37]" />}
-                        <span>{copiedLink ? 'Link Copied!' : 'Copy Pass Link'}</span>
-                      </button>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-2 px-4 py-2.5 bg-[#1A1A1D] border border-white/10 text-[#F5F5DC]/40 text-xs font-mono">
-                      <Lock className="w-4 h-4 text-amber-400" />
-                      <span>Download Locked Until Approved by Admin</span>
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={handleDownloadPNG}
+                    disabled={isExportingPng}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-[#1A1A1D] hover:bg-white/10 text-[#F5F5DC] border border-white/10 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                    title="Save pass as digital image to your device photos"
+                  >
+                    <ImageIcon className="w-4 h-4 text-[#D4AF37]" />
+                    <span>{isExportingPng ? 'Saving Image...' : 'Save PNG Pass'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-[#121214] hover:bg-[#1A1A1D] text-[#F5F5DC] border border-white/10 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer"
+                    title="Copy direct verification link for this concert pass"
+                  >
+                    {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-[#D4AF37]" />}
+                    <span>{copiedLink ? 'Link Copied!' : 'Copy Pass Link'}</span>
+                  </button>
 
                   {onOpenConciergeWithEmail && (
                     <button
