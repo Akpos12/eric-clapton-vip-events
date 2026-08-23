@@ -406,7 +406,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="text-2xl sm:text-3xl font-serif font-bold text-[#D4AF37]">
                 {paymentMethods.filter(p => p.isActive).length} <span className="text-xs font-mono font-normal text-[#F5F5DC]/50">/ {paymentMethods.length}</span>
               </div>
-              <div className="text-[10px] text-[#F5F5DC]/50 font-mono">Zelle, Wire, Cash App, etc.</div>
+              <div className="text-[10px] text-[#F5F5DC]/50 font-mono">Configured Gateways</div>
             </div>
           </div>
 
@@ -697,88 +697,98 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paymentMethods.map((pm) => (
-              <div key={pm.id} className="p-6 bg-[#121214] border border-white/10 space-y-4 relative flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-[#D4AF37] block">
-                        {pm.category}
+          {paymentMethods.length === 0 ? (
+            <div className="p-12 text-center bg-[#121214] border border-white/10 space-y-3">
+              <CreditCard className="w-8 h-8 text-[#D4AF37]/50 mx-auto" />
+              <div className="font-serif text-base font-bold text-[#F5F5DC]">No Payment Methods Configured</div>
+              <p className="text-xs text-[#F5F5DC]/50 font-mono max-w-md mx-auto">
+                All payment methods have been removed. Click "Add Payment Method" above to configure a new gateway or bank wire destination if needed.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paymentMethods.map((pm) => (
+                <div key={pm.id} className="p-6 bg-[#121214] border border-white/10 space-y-4 relative flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-[#D4AF37] block">
+                          {pm.category}
+                        </span>
+                        <h4 className="font-serif text-base font-bold text-[#F5F5DC]">{pm.name}</h4>
+                      </div>
+                      <span className={`px-2 py-0.5 text-[10px] font-mono uppercase ${
+                        pm.isActive ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-zinc-800 text-zinc-400'
+                      }`}>
+                        {pm.isActive ? 'Active' : 'Disabled'}
                       </span>
-                      <h4 className="font-serif text-base font-bold text-[#F5F5DC]">{pm.name}</h4>
                     </div>
-                    <span className={`px-2 py-0.5 text-[10px] font-mono uppercase ${
-                      pm.isActive ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-zinc-800 text-zinc-400'
-                    }`}>
-                      {pm.isActive ? 'Active' : 'Disabled'}
-                    </span>
+
+                    <div className="p-3 bg-[#0B0B0D] border border-white/5 space-y-1.5 text-xs">
+                      <div>
+                        <span className="text-[#F5F5DC]/40 text-[10px] font-mono uppercase block">Beneficiary:</span>
+                        <span className="font-serif font-bold text-[#F5F5DC]">{pm.accountName}</span>
+                      </div>
+                      <div>
+                        <span className="text-[#F5F5DC]/40 text-[10px] font-mono uppercase block">Account / Handle / Address:</span>
+                        <span className="font-mono font-bold text-[#D4AF37] break-all">{pm.accountNumberOrHandle}</span>
+                      </div>
+                      {pm.bankName && (
+                        <div>
+                          <span className="text-[#F5F5DC]/40 text-[10px] font-mono uppercase block">Bank:</span>
+                          <span className="font-mono text-[#F5F5DC]">{pm.bankName}</span>
+                        </div>
+                      )}
+                      {pm.routingNumber && (
+                        <div>
+                          <span className="text-[#F5F5DC]/40 text-[10px] font-mono uppercase block">Routing:</span>
+                          <span className="font-mono text-[#F5F5DC]">{pm.routingNumber} {pm.swiftBic ? `(SWIFT: ${pm.swiftBic})` : ''}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-xs text-[#F5F5DC]/70 font-light text-[11px]">
+                      <strong className="text-[#D4AF37] font-mono text-[10px] uppercase block">Instructions:</strong>
+                      <p className="line-clamp-2">{pm.instructions}</p>
+                    </div>
                   </div>
 
-                  <div className="p-3 bg-[#0B0B0D] border border-white/5 space-y-1.5 text-xs">
-                    <div>
-                      <span className="text-[#F5F5DC]/40 text-[10px] font-mono uppercase block">Beneficiary:</span>
-                      <span className="font-serif font-bold text-[#F5F5DC]">{pm.accountName}</span>
-                    </div>
-                    <div>
-                      <span className="text-[#F5F5DC]/40 text-[10px] font-mono uppercase block">Account / Handle / Address:</span>
-                      <span className="font-mono font-bold text-[#D4AF37] break-all">{pm.accountNumberOrHandle}</span>
-                    </div>
-                    {pm.bankName && (
-                      <div>
-                        <span className="text-[#F5F5DC]/40 text-[10px] font-mono uppercase block">Bank:</span>
-                        <span className="font-mono text-[#F5F5DC]">{pm.bankName}</span>
-                      </div>
-                    )}
-                    {pm.routingNumber && (
-                      <div>
-                        <span className="text-[#F5F5DC]/40 text-[10px] font-mono uppercase block">Routing:</span>
-                        <span className="font-mono text-[#F5F5DC]">{pm.routingNumber} {pm.swiftBic ? `(SWIFT: ${pm.swiftBic})` : ''}</span>
-                      </div>
-                    )}
-                  </div>
+                  <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => handleTogglePaymentMethod(pm)}
+                      className={`px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider border cursor-pointer ${
+                        pm.isActive 
+                          ? 'bg-zinc-800 hover:bg-zinc-700 text-[#F5F5DC]/70 border-white/10' 
+                          : 'bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border-emerald-600'
+                      }`}
+                    >
+                      {pm.isActive ? 'Disable' : 'Enable'}
+                    </button>
 
-                  <div className="text-xs text-[#F5F5DC]/70 font-light text-[11px]">
-                    <strong className="text-[#D4AF37] font-mono text-[10px] uppercase block">Instructions:</strong>
-                    <p className="line-clamp-2">{pm.instructions}</p>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => {
+                          setEditingPaymentMethod(pm);
+                          setIsAddingPaymentMethod(false);
+                        }}
+                        className="p-1.5 bg-[#1A1A1D] hover:bg-white/10 text-[#F5F5DC] border border-white/10 cursor-pointer"
+                        title="Edit Payment Details"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeletePaymentMethod(pm.id)}
+                        className="p-1.5 bg-[#1A1A1D] hover:bg-rose-950 text-rose-400 border border-white/10 cursor-pointer"
+                        title="Delete Payment Method"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => handleTogglePaymentMethod(pm)}
-                    className={`px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider border cursor-pointer ${
-                      pm.isActive 
-                        ? 'bg-zinc-800 hover:bg-zinc-700 text-[#F5F5DC]/70 border-white/10' 
-                        : 'bg-emerald-950/60 hover:bg-emerald-900 text-emerald-300 border-emerald-600'
-                    }`}
-                  >
-                    {pm.isActive ? 'Disable' : 'Enable'}
-                  </button>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => {
-                        setEditingPaymentMethod(pm);
-                        setIsAddingPaymentMethod(false);
-                      }}
-                      className="p-1.5 bg-[#1A1A1D] hover:bg-white/10 text-[#F5F5DC] border border-white/10 cursor-pointer"
-                      title="Edit Payment Details"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeletePaymentMethod(pm.id)}
-                      className="p-1.5 bg-[#1A1A1D] hover:bg-rose-950 text-rose-400 border border-white/10 cursor-pointer"
-                      title="Delete Payment Method"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* Payment Method Edit / Create Modal */}
           {editingPaymentMethod && (

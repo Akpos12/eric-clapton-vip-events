@@ -586,28 +586,34 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
                 <label className="block text-xs font-mono uppercase tracking-widest text-[#D4AF37]">
                   1. Select Payment Method
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {paymentMethods.map((pm) => {
-                    const isSel = selectedMethodId === pm.id;
-                    const IconComp = getPaymentIcon(pm.category);
-                    return (
-                      <button
-                        key={pm.id}
-                        type="button"
-                        onClick={() => setSelectedMethodId(pm.id)}
-                        className={`p-3 border text-left transition-colors cursor-pointer ${
-                          isSel
-                            ? 'bg-[#1A1A1D] border-[#D4AF37] text-[#F5F5DC]'
-                            : 'bg-[#0B0B0D] border-white/10 text-[#F5F5DC]/60 hover:text-white'
-                        }`}
-                      >
-                        <IconComp className={`w-4 h-4 ${isSel ? 'text-[#D4AF37]' : 'text-[#F5F5DC]/40'}`} />
-                        <div className="font-serif font-bold text-xs mt-1.5 line-clamp-1">{pm.name}</div>
-                        <div className="text-[10px] text-[#F5F5DC]/40 font-mono capitalize">{pm.category}</div>
-                      </button>
-                    );
-                  })}
-                </div>
+                {paymentMethods.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {paymentMethods.map((pm) => {
+                      const isSel = selectedMethodId === pm.id;
+                      const IconComp = getPaymentIcon(pm.category);
+                      return (
+                        <button
+                          key={pm.id}
+                          type="button"
+                          onClick={() => setSelectedMethodId(pm.id)}
+                          className={`p-3 border text-left transition-colors cursor-pointer ${
+                            isSel
+                              ? 'bg-[#1A1A1D] border-[#D4AF37] text-[#F5F5DC]'
+                              : 'bg-[#0B0B0D] border-white/10 text-[#F5F5DC]/60 hover:text-white'
+                          }`}
+                        >
+                          <IconComp className={`w-4 h-4 ${isSel ? 'text-[#D4AF37]' : 'text-[#F5F5DC]/40'}`} />
+                          <div className="font-serif font-bold text-xs mt-1.5 line-clamp-1">{pm.name}</div>
+                          <div className="text-[10px] text-[#F5F5DC]/40 font-mono capitalize">{pm.category}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-[#121214] border border-white/10 text-[#F5F5DC]/60 text-xs font-mono">
+                    No payment methods are currently active on the gateway.
+                  </div>
+                )}
               </div>
 
               {/* Chosen Payment Method Transfer Instructions Box */}

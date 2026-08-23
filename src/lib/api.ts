@@ -38,7 +38,7 @@ const LS_MGR_KEY = 'ec_vip_mgr_store_v9';
 const LS_SUPPORT_KEY = 'ec_vip_support_store_v9';
 const LS_VIP_KEY = 'ec_vip_packages_store_v9';
 const LS_REWARDS_KEY = 'ec_vip_rewards_store_v9';
-const LS_PAYMENT_METHODS_KEY = 'ec_vip_payment_methods_store_v9';
+const LS_PAYMENT_METHODS_KEY = 'ec_vip_payment_methods_store_v10';
 
 // Timeout helper to prevent Firestore network stalls
 async function withTimeout<T>(promise: Promise<T>, timeoutMs = 2000): Promise<T> {
@@ -128,9 +128,15 @@ export async function seedInitialDataIfNeeded() {
       await setDoc(doc(db, 'events', ev.id), ev, { merge: true });
     }
 
-    // Seed payment methods in Firestore
-    for (const pm of INITIAL_PAYMENT_METHODS) {
-      await setDoc(doc(db, 'payment_methods', pm.id), pm, { merge: true });
+    // Purge all payment methods from Firestore as requested
+    try {
+      const pmCol = collection(db, 'payment_methods');
+      const pmSnap = await withTimeout(getDocs(pmCol), 2500);
+      for (const d of pmSnap.docs) {
+        await deleteDoc(doc(db, 'payment_methods', d.id));
+      }
+    } catch {
+      // ignore
     }
 
     // Seed sample orders ensuring pending verification status
@@ -352,9 +358,7 @@ export async function updateEventTierPrices(eventId: string, tiers: TicketTierCo
 export async function getPaymentMethods(): Promise<PaymentMethodConfig[]> {
   try {
     const snap = await withTimeout(getDocs(collection(db, 'payment_methods')), 2000);
-    if (!snap.empty) {
-      return snap.docs.map(d => d.data() as PaymentMethodConfig);
-    }
+    return snap.docs.map(d => d.data() as PaymentMethodConfig);
   } catch {
     // fallback
   }
