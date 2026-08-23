@@ -752,7 +752,7 @@ export const SAMPLE_ORDERS: TicketOrder[] = [
     seatInfo: 'Front Orchestra - Row 2, Seats 14 & 15',
     attendee: {
       fullName: 'David Sterling',
-      email: 'alexwtchmn@gmail.com',
+      email: 'david.sterling@example.com',
       phone: '+1 (313) 555-0144',
       country: 'United States',
       guestCount: 2,
@@ -826,7 +826,7 @@ export const SAMPLE_MEET_GREETS: MeetGreetRequest[] = [
     id: 'MGR-2026-44109',
     customerId: 'user-demo-1',
     fullName: 'Robert Harrison',
-    email: 'alexwtchmn@gmail.com',
+    email: 'robert.harrison@example.com',
     phone: '+1 (313) 555-9812',
     country: 'United States',
     eventId: 'ec-detroit-2026',
@@ -867,14 +867,14 @@ export const SAMPLE_MEET_GREETS: MeetGreetRequest[] = [
 
 export const SAMPLE_SUPPORT_TICKETS: SupportTicket[] = [
   {
-    id: 'SPT-9012',
+    id: 'SPT-1001',
     customerName: 'David Sterling',
-    customerEmail: 'alexwtchmn@gmail.com',
+    customerEmail: 'david.sterling@example.com',
     bookingRef: 'EC-2026-89421',
     category: 'VIP Inquiries',
     subject: 'Dietary preferences for Detroit Little Caesars Arena Pre-Show Dinner',
-    status: 'In Progress',
-    priority: 'VIP Escalation',
+    status: 'Resolved',
+    priority: 'Normal',
     assignedAdmin: 'Elena M. (Lead Concierge)',
     messages: [
       {

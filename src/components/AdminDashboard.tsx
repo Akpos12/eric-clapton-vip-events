@@ -1558,7 +1558,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           className="bg-[#0B0B0D] text-[#D4AF37] px-2 py-0.5 border border-white/10 text-[10px]"
                         >
                           <option value="Tour Operations Specialist">Tour Operations Specialist</option>
-                          <option value="Alex Watchman (Tour Manager)">Alex Watchman (Tour Manager)</option>
+                          <option value="Senior Tour Manager">Senior Tour Manager</option>
                           <option value="VIP Seating & Hospitality Concierge">VIP Seating & Hospitality Concierge</option>
                           <option value="Security & Gate Credentials Liaison">Security & Gate Credentials Liaison</option>
                         </select>

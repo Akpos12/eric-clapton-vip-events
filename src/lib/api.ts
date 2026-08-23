@@ -32,13 +32,13 @@ import {
 } from '../data/mockData';
 
 // Local storage fallback keys for instant responsiveness if offline or initial setup
-const LS_EVENTS_KEY = 'ec_vip_events_store_v6';
-const LS_ORDERS_KEY = 'ec_vip_orders_store_v6';
-const LS_MGR_KEY = 'ec_vip_mgr_store_v6';
-const LS_SUPPORT_KEY = 'ec_vip_support_store_v6';
-const LS_VIP_KEY = 'ec_vip_packages_store_v6';
-const LS_REWARDS_KEY = 'ec_vip_rewards_store_v6';
-const LS_PAYMENT_METHODS_KEY = 'ec_vip_payment_methods_store_v6';
+const LS_EVENTS_KEY = 'ec_vip_events_store_v7';
+const LS_ORDERS_KEY = 'ec_vip_orders_store_v7';
+const LS_MGR_KEY = 'ec_vip_mgr_store_v7';
+const LS_SUPPORT_KEY = 'ec_vip_support_store_v7';
+const LS_VIP_KEY = 'ec_vip_packages_store_v7';
+const LS_REWARDS_KEY = 'ec_vip_rewards_store_v7';
+const LS_PAYMENT_METHODS_KEY = 'ec_vip_payment_methods_store_v7';
 
 // Timeout helper to prevent Firestore network stalls
 async function withTimeout<T>(promise: Promise<T>, timeoutMs = 2000): Promise<T> {
@@ -58,6 +58,16 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs = 2000): Promise<T>
 
 // Seed initial database state if empty or obsolete
 export async function seedInitialDataIfNeeded() {
+  // Clean up legacy saved fan email if it was the demo fallback
+  try {
+    const savedEmail = localStorage.getItem('ec_vip_fan_email');
+    if (savedEmail && savedEmail.toLowerCase() === 'alexwtchmn@gmail.com') {
+      localStorage.removeItem('ec_vip_fan_email');
+    }
+  } catch {
+    // ignore
+  }
+
   // Always ensure LocalStorage cache is populated immediately for zero latency
   if (!localStorage.getItem(LS_EVENTS_KEY)) {
     localStorage.setItem(LS_EVENTS_KEY, JSON.stringify(INITIAL_EVENTS));
@@ -103,6 +113,13 @@ export async function seedInitialDataIfNeeded() {
       } catch {
         // ignore
       }
+    }
+
+    // Delete obsolete SPT-9012 ticket if it existed
+    try {
+      await deleteDoc(doc(db, 'support_tickets', 'SPT-9012'));
+    } catch {
+      // ignore
     }
 
     // Always ensure all current tour events are present in Firestore
@@ -490,12 +507,17 @@ export async function enterGiveaway(giveawayId: string, _userDetails: { name: st
 export async function getSupportTickets(): Promise<SupportTicket[]> {
   try {
     const snap = await withTimeout(getDocs(collection(db, 'support_tickets')), 2000);
-    if (!snap.empty) return snap.docs.map(d => d.data() as SupportTicket);
+    if (!snap.empty) {
+      return snap.docs
+        .map(d => d.data() as SupportTicket)
+        .filter(t => t.id !== 'SPT-9012' && t.customerEmail?.toLowerCase() !== 'alexwtchmn@gmail.com');
+    }
   } catch {
     // fallback
   }
   const raw = localStorage.getItem(LS_SUPPORT_KEY);
-  return raw ? JSON.parse(raw) : SAMPLE_SUPPORT_TICKETS;
+  const list: SupportTicket[] = raw ? JSON.parse(raw) : SAMPLE_SUPPORT_TICKETS;
+  return list.filter(t => t.id !== 'SPT-9012' && t.customerEmail?.toLowerCase() !== 'alexwtchmn@gmail.com');
 }
 
 export async function getSupportTicketsByEmail(email: string): Promise<SupportTicket[]> {

@@ -42,10 +42,20 @@ export const FanConcierge: React.FC<FanConciergeProps> = ({
 }) => {
   // Email search/filter state
   const [lookupEmail, setLookupEmail] = useState<string>(() => {
-    return initialEmail || localStorage.getItem('ec_vip_fan_email') || 'alexwtchmn@gmail.com';
+    const saved = localStorage.getItem('ec_vip_fan_email');
+    if (saved && saved.toLowerCase() === 'alexwtchmn@gmail.com') {
+      localStorage.removeItem('ec_vip_fan_email');
+      return initialEmail || '';
+    }
+    return initialEmail || saved || '';
   });
   const [appliedEmailFilter, setAppliedEmailFilter] = useState<string>(() => {
-    return initialEmail || localStorage.getItem('ec_vip_fan_email') || 'alexwtchmn@gmail.com';
+    const saved = localStorage.getItem('ec_vip_fan_email');
+    if (saved && saved.toLowerCase() === 'alexwtchmn@gmail.com') {
+      localStorage.removeItem('ec_vip_fan_email');
+      return initialEmail || '';
+    }
+    return initialEmail || saved || '';
   });
 
   const [selectedTicketId, setSelectedTicketId] = useState<string>('');
@@ -270,7 +280,7 @@ export const FanConcierge: React.FC<FanConciergeProps> = ({
               required
               value={lookupEmail}
               onChange={(e) => setLookupEmail(e.target.value)}
-              placeholder="e.g. alexwtchmn@gmail.com (email used when booking)"
+              placeholder="e.g. yourname@example.com (email used when booking)"
               className="w-full pl-10 pr-4 py-3 bg-[#0B0B0D] border border-white/15 text-xs sm:text-sm text-[#F5F5DC] placeholder:text-[#F5F5DC]/30 focus:outline-none focus:border-[#D4AF37] font-mono transition-colors"
             />
           </div>
@@ -562,7 +572,7 @@ export const FanConcierge: React.FC<FanConciergeProps> = ({
                     required
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
-                    placeholder="alexwtchmn@gmail.com"
+                    placeholder="e.g. yourname@example.com"
                     className="w-full px-3 py-2 bg-[#0B0B0D] border border-white/10 text-xs text-[#F5F5DC] focus:outline-none focus:border-[#D4AF37]"
                   />
                 </div>
