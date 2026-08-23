@@ -5,10 +5,35 @@ import html2canvasPro from 'html2canvas-pro';
 import { TicketOrder } from '../types';
 
 /**
+ * Build a scan-ready QR payload with the official Eric Clapton concert ticket URL
+ */
+export function buildTicketQRPayload(order: TicketOrder): string {
+  const origin = typeof window !== 'undefined' && window.location.origin
+    ? window.location.origin
+    : 'https://ericclaptonvip.com';
+  
+  return `${origin}/?ticket=${encodeURIComponent(order.id)}`;
+}
+
+/**
  * Generate a high-contrast luxury digital QR Code data URL
  */
-export async function generateTicketQRCode(payload: string): Promise<string> {
+export async function generateTicketQRCode(payloadOrOrder: string | TicketOrder): Promise<string> {
   try {
+    let payload = '';
+    if (typeof payloadOrOrder === 'object' && payloadOrOrder !== null && 'id' in payloadOrOrder) {
+      payload = buildTicketQRPayload(payloadOrOrder as TicketOrder);
+    } else {
+      payload = String(payloadOrOrder);
+      // If it's a ticket order ID like EC-2026-..., convert to full ticket URL so phone scans work seamlessly
+      if (payload.startsWith('EC-') && !payload.startsWith('http')) {
+        const origin = typeof window !== 'undefined' && window.location.origin
+          ? window.location.origin
+          : 'https://ericclaptonvip.com';
+        payload = `${origin}/?ticket=${encodeURIComponent(payload)}`;
+      }
+    }
+
     return await QRCode.toDataURL(payload, {
       width: 320,
       margin: 1,

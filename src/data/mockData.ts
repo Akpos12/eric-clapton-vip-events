@@ -873,37 +873,7 @@ export const SAMPLE_MEET_GREETS: MeetGreetRequest[] = [
   }
 ];
 
-export const SAMPLE_SUPPORT_TICKETS: SupportTicket[] = [
-  {
-    id: 'SPT-1001',
-    customerName: 'David Sterling',
-    customerEmail: 'david.sterling@example.com',
-    bookingRef: 'EC-2026-89421',
-    category: 'VIP Inquiries',
-    subject: 'Dietary preferences for Detroit Little Caesars Arena Pre-Show Dinner',
-    status: 'Resolved',
-    priority: 'Normal',
-    assignedAdmin: 'Elena M. (Lead Concierge)',
-    messages: [
-      {
-        id: 'msg-1',
-        sender: 'user',
-        senderName: 'David Sterling',
-        text: 'Hello, I booked 2 Slowhand Gold VIP tickets for Sept 6 in Detroit. My wife has a gluten and shellfish allergy. Can the dining room accommodate this?',
-        timestamp: '2026-08-20T08:15:00Z'
-      },
-      {
-        id: 'msg-2',
-        sender: 'agent',
-        senderName: 'Elena M. (VIP Concierge)',
-        text: 'Greetings Mr. Sterling! Absolutely. The hospitality catering team at Little Caesars Arena prepares dedicated gluten-free and allergen-safe bespoke menus for our VIP guests. We have flagged your booking reference EC-2026-89421.',
-        timestamp: '2026-08-20T08:45:00Z'
-      }
-    ],
-    createdAt: '2026-08-20T08:15:00Z',
-    updatedAt: '2026-08-20T08:45:00Z'
-  }
-];
+export const SAMPLE_SUPPORT_TICKETS: SupportTicket[] = [];
 
 export const INITIAL_PAYMENT_METHODS: PaymentMethodConfig[] = [
   {

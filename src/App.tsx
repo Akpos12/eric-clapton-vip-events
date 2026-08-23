@@ -49,6 +49,7 @@ export default function App() {
 
   // Modals
   const [isCheckTicketOpen, setIsCheckTicketOpen] = useState(false);
+  const [initialTicketQuery, setInitialTicketQuery] = useState<string>('');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [selectedEventForCheckout, setSelectedEventForCheckout] = useState<ConcertEvent | null>(null);
   const [selectedTierForCheckout, setSelectedTierForCheckout] = useState<string | undefined>(undefined);
@@ -63,7 +64,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Global secret shortcut and URL hash listener
+  // Global secret shortcut and URL hash / query param listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ctrl + Shift + A or Cmd + Shift + A
@@ -77,23 +78,42 @@ export default function App() {
       }
     };
 
-    const handleHashChange = () => {
+    const checkUrlForPass = () => {
+      // Check query params (e.g. ?ticket=EC-2026-89421 or ?pass=EC-2026-89421)
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const ticketParam = urlParams.get('ticket') || urlParams.get('pass') || urlParams.get('id');
+        if (ticketParam) {
+          setInitialTicketQuery(ticketParam.trim());
+          setIsCheckTicketOpen(true);
+        }
+      } catch {
+        // ignore url parse errors
+      }
+
+      // Check hash params (e.g. #ticket=EC-2026-89421 or #admin)
       if (window.location.hash === '#admin' || window.location.hash === '#control-room') {
         if (isAdmin) {
           setActiveTab('admin');
         } else {
           setIsAdminGateOpen(true);
         }
+      } else if (window.location.hash.startsWith('#ticket=') || window.location.hash.startsWith('#pass=')) {
+        const hashTicket = window.location.hash.split('=')[1];
+        if (hashTicket) {
+          setInitialTicketQuery(hashTicket.trim());
+          setIsCheckTicketOpen(true);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange();
+    window.addEventListener('hashchange', checkUrlForPass);
+    checkUrlForPass();
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('hashchange', checkUrlForPass);
     };
   }, [isAdmin]);
 
@@ -296,7 +316,11 @@ export default function App() {
 
       <CheckTicketModal
         isOpen={isCheckTicketOpen}
-        onClose={() => setIsCheckTicketOpen(false)}
+        initialQuery={initialTicketQuery}
+        onClose={() => {
+          setIsCheckTicketOpen(false);
+          setInitialTicketQuery('');
+        }}
         onSelectEvent={(eventId) => {
           const ev = events.find(e => e.id === eventId);
           if (ev) handleOpenBooking(ev);

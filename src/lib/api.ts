@@ -32,13 +32,13 @@ import {
 } from '../data/mockData';
 
 // Local storage fallback keys for instant responsiveness if offline or initial setup
-const LS_EVENTS_KEY = 'ec_vip_events_store_v8';
-const LS_ORDERS_KEY = 'ec_vip_orders_store_v8';
-const LS_MGR_KEY = 'ec_vip_mgr_store_v8';
-const LS_SUPPORT_KEY = 'ec_vip_support_store_v8';
-const LS_VIP_KEY = 'ec_vip_packages_store_v8';
-const LS_REWARDS_KEY = 'ec_vip_rewards_store_v8';
-const LS_PAYMENT_METHODS_KEY = 'ec_vip_payment_methods_store_v8';
+const LS_EVENTS_KEY = 'ec_vip_events_store_v9';
+const LS_ORDERS_KEY = 'ec_vip_orders_store_v9';
+const LS_MGR_KEY = 'ec_vip_mgr_store_v9';
+const LS_SUPPORT_KEY = 'ec_vip_support_store_v9';
+const LS_VIP_KEY = 'ec_vip_packages_store_v9';
+const LS_REWARDS_KEY = 'ec_vip_rewards_store_v9';
+const LS_PAYMENT_METHODS_KEY = 'ec_vip_payment_methods_store_v9';
 
 // Timeout helper to prevent Firestore network stalls
 async function withTimeout<T>(promise: Promise<T>, timeoutMs = 2000): Promise<T> {
@@ -115,8 +115,9 @@ export async function seedInitialDataIfNeeded() {
       }
     }
 
-    // Delete obsolete SPT-9012 ticket if it existed
+    // Delete obsolete support tickets if they existed
     try {
+      await deleteDoc(doc(db, 'support_tickets', 'SPT-1001'));
       await deleteDoc(doc(db, 'support_tickets', 'SPT-9012'));
     } catch {
       // ignore
@@ -511,14 +512,14 @@ export async function getSupportTickets(): Promise<SupportTicket[]> {
     if (!snap.empty) {
       return snap.docs
         .map(d => d.data() as SupportTicket)
-        .filter(t => t.id !== 'SPT-9012' && t.customerEmail?.toLowerCase() !== 'alexwtchmn@gmail.com');
+        .filter(t => t.id !== 'SPT-1001' && t.id !== 'SPT-9012' && t.customerEmail?.toLowerCase() !== 'alexwtchmn@gmail.com');
     }
   } catch {
     // fallback
   }
   const raw = localStorage.getItem(LS_SUPPORT_KEY);
   const list: SupportTicket[] = raw ? JSON.parse(raw) : SAMPLE_SUPPORT_TICKETS;
-  return list.filter(t => t.id !== 'SPT-9012' && t.customerEmail?.toLowerCase() !== 'alexwtchmn@gmail.com');
+  return list.filter(t => t.id !== 'SPT-1001' && t.id !== 'SPT-9012' && t.customerEmail?.toLowerCase() !== 'alexwtchmn@gmail.com');
 }
 
 export async function getSupportTicketsByEmail(email: string): Promise<SupportTicket[]> {
