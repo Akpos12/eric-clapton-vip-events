@@ -254,19 +254,26 @@ export const ConcertCatalog: React.FC<ConcertCatalogProps> = ({
 
                     {/* Ticket Tiers Pills */}
                     <div className="flex flex-wrap gap-1.5">
-                      {ev.ticketCategories.slice(0, 3).map((tier) => (
-                        <span
-                          key={tier.id}
-                          className="px-2 py-0.5 bg-[#1A1A1D] text-[#F5F5DC]/80 text-[10px] border border-white/5 font-mono"
-                        >
-                          {tier.name}: ${tier.price}
-                        </span>
-                      ))}
-                      {ev.ticketCategories.length > 3 && (
-                        <span className="px-2 py-0.5 bg-[#1A1A1D] text-[#D4AF37] text-[10px] font-mono">
-                          +{ev.ticketCategories.length - 3} more tiers
-                        </span>
-                      )}
+                      {ev.ticketCategories.map((tier) => {
+                        const isSoldOut = tier.available <= 0 || tier.badge?.toLowerCase().includes('sold out');
+                        return (
+                          <span
+                            key={tier.id}
+                            className={`px-2 py-0.5 text-[10px] border font-mono flex items-center gap-1 ${
+                              isSoldOut
+                                ? 'bg-red-950/20 text-red-400 border-red-900/30'
+                                : 'bg-[#1A1A1D] text-[#F5F5DC]/90 border-white/10'
+                            }`}
+                          >
+                            <span>{tier.name}: ${tier.price.toLocaleString()}</span>
+                            {isSoldOut ? (
+                              <span className="text-[9px] text-red-400 font-bold ml-0.5 uppercase">SOLD OUT</span>
+                            ) : tier.available <= 5 ? (
+                              <span className="text-[9px] text-[#D4AF37] font-bold ml-0.5 uppercase">{tier.available} Left</span>
+                            ) : null}
+                          </span>
+                        );
+                      })}
                     </div>
 
                     {/* Action Buttons */}

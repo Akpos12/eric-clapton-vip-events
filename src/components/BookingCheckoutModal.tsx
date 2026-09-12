@@ -111,14 +111,25 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
     if (initialTierId) {
       setSelectedTierId(initialTierId);
     } else if (event?.ticketCategories?.length) {
-      setSelectedTierId(event.ticketCategories[0].id);
+      const firstAvailable = event.ticketCategories.find(t => t.available > 0);
+      setSelectedTierId(firstAvailable ? firstAvailable.id : event.ticketCategories[0].id);
     }
   }, [initialTierId, event]);
 
-  if (!isOpen || !event) return null;
-
   const currentTier: TicketTierConfig = 
-    event.ticketCategories.find(t => t.id === selectedTierId) || event.ticketCategories[0];
+    event?.ticketCategories.find(t => t.id === selectedTierId) || event?.ticketCategories[0];
+
+  useEffect(() => {
+    if (currentTier && currentTier.available > 0) {
+      if (quantity > currentTier.available) {
+        setQuantity(currentTier.available);
+      } else if (quantity < 1) {
+        setQuantity(1);
+      }
+    }
+  }, [selectedTierId, currentTier?.available]);
+
+  if (!isOpen || !event) return null;
 
   // Price calculations
   const unitPrice = currentTier ? currentTier.price : event.startingPrice;
@@ -378,40 +389,101 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
                 <div className="space-y-2.5">
                   {event.ticketCategories.map((t) => {
                     const isSelected = selectedTierId === t.id;
+                    const isSoldOut = t.available <= 0 || t.badge?.toLowerCase().includes('sold out');
                     return (
                       <div
                         key={t.id}
-                        onClick={() => setSelectedTierId(t.id)}
-                        className={`p-4 border transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#1A1A1D] border-[#D4AF37] shadow-lg shadow-[#D4AF37]/5'
-                            : 'bg-[#0B0B0D] border-white/10 hover:border-white/20'
+                        onClick={() => {
+                          if (!isSoldOut) {
+                            setSelectedTierId(t.id);
+                          }
+                        }}
+                        className={`p-4 border transition-all ${
+                          isSoldOut
+                            ? 'bg-[#0B0B0D]/85 border-white/5 opacity-80 cursor-not-allowed'
+                            : isSelected
+                              ? 'bg-[#1A1A1D] border-[#D4AF37] shadow-lg shadow-[#D4AF37]/5 cursor-pointer'
+                              : 'bg-[#0B0B0D] border-white/10 hover:border-white/20 cursor-pointer'
                         }`}
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="space-y-1">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="space-y-1.5 max-w-md">
                             <div className="flex items-center gap-2">
                               <span className="font-serif font-bold text-base text-[#F5F5DC]">{t.name}</span>
-                              {t.badge && (
-                                <span className="px-2 py-0.5 text-[9px] font-mono uppercase bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30">
+                              {isSoldOut ? (
+                                <span className="px-2 py-0.5 text-[9px] font-mono uppercase bg-red-950/60 text-red-400 border border-red-500/40 font-bold tracking-wider">
+                                  SOLD OUT
+                                </span>
+                              ) : t.badge ? (
+                                <span className="px-2 py-0.5 text-[9px] font-mono uppercase bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 font-bold tracking-wider">
                                   {t.badge}
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 text-[9px] font-mono uppercase bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 font-bold tracking-wider">
+                                  {t.available} Left
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-[#F5F5DC]/70 font-light">{t.description}</p>
+                            <p className="text-xs text-[#F5F5DC]/80 font-light leading-relaxed">{t.description}</p>
                             {t.sectionInfo && (
                               <div className="text-[11px] font-mono text-[#D4AF37]/80 flex items-center gap-1">
                                 <MapPin className="w-3 h-3" /> {t.sectionInfo}
                               </div>
                             )}
                           </div>
-                          <div className="text-right">
-                            <div className="font-serif text-lg font-bold text-[#D4AF37]">${t.price.toLocaleString()}</div>
-                            <div className="text-[10px] text-[#F5F5DC]/40 font-mono">{t.available} Left</div>
+                          
+                          <div className="text-right flex flex-col items-end gap-1.5 shrink-0">
+                            <div className="font-serif text-xl font-bold text-[#D4AF37]">${t.price.toLocaleString()}</div>
+                            
+                            <div className="text-[11px] font-mono">
+                              {isSoldOut ? (
+                                <span className="text-red-400 font-bold uppercase tracking-wider">SOLD OUT</span>
+                              ) : (
+                                <span className="text-[#D4AF37] font-bold">{t.available} Left</span>
+                              )}
+                            </div>
+
+                            {/* Ticket Purchase Button / SOLD OUT Label */}
+                            <div className="pt-1 flex flex-col items-end">
+                              {isSoldOut ? (
+                                <div className="space-y-1 flex flex-col items-end">
+                                  <button
+                                    type="button"
+                                    disabled
+                                    className="px-3.5 py-1.5 bg-red-950/40 text-red-400 border border-red-900/40 text-[10px] font-mono font-bold uppercase tracking-wider cursor-not-allowed opacity-75"
+                                  >
+                                    SOLD OUT
+                                  </button>
+                                  <span className="text-[9px] font-mono text-red-400/80 uppercase">
+                                    Unavailable for purchase
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="space-y-1 flex flex-col items-end">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedTierId(t.id);
+                                    }}
+                                    className={`px-4 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                                      isSelected
+                                        ? 'bg-[#D4AF37] text-black shadow-md shadow-[#D4AF37]/10'
+                                        : 'bg-[#1A1A1D] text-[#D4AF37] border border-[#D4AF37]/40 hover:bg-[#D4AF37] hover:text-black'
+                                    }`}
+                                  >
+                                    {isSelected ? 'Available for purchase' : 'Available for purchase'}
+                                  </button>
+                                  <span className="text-[9px] font-mono text-[#D4AF37]/80 uppercase">
+                                    Available for purchase
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
 
-                        {isSelected && t.benefits && t.benefits.length > 0 && (
+                        {isSelected && !isSoldOut && t.benefits && t.benefits.length > 0 && (
                           <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-[#F5F5DC]/80">
                             {t.benefits.map((b, idx) => (
                               <div key={idx} className="flex items-center gap-1.5 text-[11px]">
@@ -431,21 +503,29 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
               <div className="p-4 bg-[#0B0B0D] border border-white/10 flex items-center justify-between">
                 <div>
                   <div className="font-serif font-bold text-sm text-[#F5F5DC]">Number of Passes</div>
-                  <div className="text-[11px] text-[#F5F5DC]/50 font-mono">Max 6 per order under VIP protocol</div>
+                  <div className="text-[11px] text-[#F5F5DC]/50 font-mono">
+                    {currentTier && currentTier.available > 0
+                      ? `Max ${Math.min(6, currentTier.available)} per order (${currentTier.available} Left)`
+                      : 'Unavailable for purchase'}
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
+                    disabled={quantity <= 1 || (currentTier && currentTier.available <= 0)}
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-8 h-8 bg-[#1A1A1D] hover:bg-white/10 text-white font-mono text-sm border border-white/10 flex items-center justify-center cursor-pointer"
+                    className="w-8 h-8 bg-[#1A1A1D] hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-white font-mono text-sm border border-white/10 flex items-center justify-center cursor-pointer"
                   >
                     -
                   </button>
-                  <span className="font-serif text-lg font-bold w-6 text-center text-[#D4AF37]">{quantity}</span>
+                  <span className="font-serif text-lg font-bold w-6 text-center text-[#D4AF37]">
+                    {currentTier && currentTier.available <= 0 ? 0 : quantity}
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setQuantity(Math.min(6, currentTier.available, quantity + 1))}
-                    className="w-8 h-8 bg-[#1A1A1D] hover:bg-white/10 text-white font-mono text-sm border border-white/10 flex items-center justify-center cursor-pointer"
+                    disabled={currentTier && (currentTier.available <= 0 || quantity >= currentTier.available || quantity >= 6)}
+                    onClick={() => setQuantity(Math.min(6, currentTier?.available || 1, quantity + 1))}
+                    className="w-8 h-8 bg-[#1A1A1D] hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-white font-mono text-sm border border-white/10 flex items-center justify-center cursor-pointer"
                   >
                     +
                   </button>
@@ -457,14 +537,24 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
                 <div className="text-xs font-mono text-[#F5F5DC]/60">
                   Subtotal: <strong className="text-[#D4AF37]">${subtotal.toLocaleString()} USD</strong>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleNextStep1}
-                  className="px-6 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs tracking-widest uppercase transition-colors flex items-center gap-2 font-mono cursor-pointer"
-                >
-                  <span>Continue to Attendee Info</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                {currentTier && currentTier.available <= 0 ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="px-6 py-2.5 bg-red-950/40 text-red-400 border border-red-500/40 font-bold text-xs tracking-widest uppercase flex items-center gap-2 font-mono cursor-not-allowed opacity-80"
+                  >
+                    <span>SOLD OUT — Unavailable for Purchase</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleNextStep1}
+                    className="px-6 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs tracking-widest uppercase transition-colors flex items-center gap-2 font-mono cursor-pointer"
+                  >
+                    <span>Continue to Attendee Info</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           )}

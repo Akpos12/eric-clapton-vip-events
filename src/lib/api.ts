@@ -32,7 +32,7 @@ import {
 } from '../data/mockData';
 
 // Local storage fallback keys for instant responsiveness if offline or initial setup
-const LS_EVENTS_KEY = 'ec_vip_events_store_v9';
+const LS_EVENTS_KEY = 'ec_vip_events_store_v10';
 const LS_ORDERS_KEY = 'ec_vip_orders_store_v9';
 const LS_MGR_KEY = 'ec_vip_mgr_store_v9';
 const LS_SUPPORT_KEY = 'ec_vip_support_store_v9';
@@ -125,7 +125,7 @@ export async function seedInitialDataIfNeeded() {
 
     // Always ensure all current tour events are present in Firestore
     for (const ev of INITIAL_EVENTS) {
-      await setDoc(doc(db, 'events', ev.id), ev, { merge: true });
+      await setDoc(doc(db, 'events', ev.id), ev);
     }
 
     // Purge all payment methods from Firestore as requested

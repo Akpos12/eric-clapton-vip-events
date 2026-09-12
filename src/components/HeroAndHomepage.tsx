@@ -152,7 +152,7 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
                 </div>
                 <div className="text-xs text-[#F5F5DC]/80 flex items-center justify-between">
                   <span>Special Guest: <strong className="text-[#F5F5DC]">Jimmie Vaughan</strong></span>
-                  <span className="text-[#D4AF37] font-mono font-bold">Passes from $1,800</span>
+                  <span className="text-[#D4AF37] font-mono font-bold">VIP Passes from $2,000 (2 Left)</span>
                 </div>
               </div>
 

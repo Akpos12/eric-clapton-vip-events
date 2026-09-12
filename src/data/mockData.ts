@@ -12,7 +12,7 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
     eventDate: '2026-09-15',
     doorsOpen: '18:00',
     concertTime: '19:30',
-    startingPrice: 1800,
+    startingPrice: 2000,
     vipAvailability: true,
     meetAndGreetAvailability: true,
     status: 'upcoming',
@@ -24,70 +24,34 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
     updatedAt: new Date().toISOString(),
     ticketCategories: [
       {
-        id: 'stp-tier-ga',
-        name: 'General Admission',
-        price: 1800,
-        description: 'Main arena floor standing with up-close sound immersion and central stage sightlines.',
-        benefits: ['Direct Stage Floor Access', 'Official Commemorative Tour Pass', 'Dedicated Arena Fast-Track Entrance'],
-        inventory: 120,
-        available: 65,
-        badge: 'Starting Tier',
-        sectionInfo: 'Floor Standing Section A'
+        id: 'stp-tier-vip',
+        name: 'VIP',
+        price: 2000,
+        description: 'Premium VIP admission with the best available seating and VIP benefits.',
+        benefits: [
+          'Best Available Seating & Sightlines',
+          'VIP Lounge Hospitality Access',
+          'Fast-Track Red Carpet Arena Entrance',
+          'Commemorative VIP Tour Pass & Lanyard'
+        ],
+        inventory: 50,
+        available: 2,
+        badge: '2 Left',
+        sectionInfo: 'VIP Prime Seating Section'
       },
       {
         id: 'stp-tier-std',
-        name: 'Front Row Reserved',
-        price: 2800,
-        description: 'Reserved Lower Bowl prime tier seating with pristine acoustic sightlines.',
-        benefits: ['Lower Bowl 100-Level Reserved Seats (Rows 1-5)', 'Digital Tour Program Guide', 'Souvenir Concert Lanyard', 'Express Merchandise Access'],
+        name: 'Standard',
+        price: 1000,
+        description: 'Standard event admission.',
+        benefits: [
+          'Standard Event Admission',
+          'Reserved Arena Seating'
+        ],
         inventory: 150,
-        available: 78,
-        badge: 'Popular',
-        sectionInfo: 'Lower Bowl Sections 106-114'
-      },
-      {
-        id: 'stp-tier-hosp',
-        name: 'Hospitality Package',
-        price: 2950,
-        description: 'Gourmet 3-course private arena dining before the show with sommelier pairings.',
-        benefits: ['3-Course Gourmet Dinner Pre-Show', 'Lower Tier Center Reserved Seating', 'Post-Concert Dessert Bar Access', 'Official 2026 Tour Book'],
-        inventory: 25,
-        available: 9,
-        badge: 'Fine Dining',
-        sectionInfo: 'Grand Casino Arena Chef Suite'
-      },
-      {
-        id: 'stp-tier-vip',
-        name: 'Guitar Legend VIP Experience',
-        price: 4500,
-        description: 'Front Floor Seating with Grand Casino VIP Hospitality Club reception.',
-        benefits: ['Floor Rows 1-3 Center Stage', 'Grand Casino VIP Hospitality Suite Access', 'Pre-Show Sommelier Wine Tasting & Canapés', 'Custom Embroidered 2026 Tour Jacket', 'VIP Commemorative Laminate'],
-        inventory: 35,
-        available: 14,
-        badge: 'VIP Hospitality',
-        sectionInfo: 'Floor Rows 1-3 Center'
-      },
-      {
-        id: 'stp-tier-soundcheck',
-        name: 'Backstage Soundcheck & Lounge VIP',
-        price: 7500,
-        description: 'Exclusive pre-show soundcheck viewing, private artist liaison escort, and archival gifts.',
-        benefits: ['Private Pre-Show Soundcheck Access', 'Artist Liaison Concierge Escort', 'Backstage VIP Suite Access', 'Limited-Edition Clapton Collector Boxset', 'Top-Shelf Open Bar Hospitality'],
-        inventory: 10,
-        available: 4,
-        badge: 'Backstage Pass',
-        sectionInfo: 'Stage Front Diamond Box'
-      },
-      {
-        id: 'stp-tier-prem-vip',
-        name: 'Ultra VIP Royal Diamond Box',
-        price: 12000,
-        description: 'Ultra VIP Diamond Stage-Side Banquette with dedicated concierge, private car service, and collector guitar.',
-        benefits: ['Stage-Front Diamond Banquette Seating', 'Private Luxury Chauffeur Arrival', 'Private Concierge Escort Throughout Show', 'Signed Framed Archival Tour Art Print', 'Vintage Remastered Vinyl Boxset', 'Exclusive VIP Gift Trunk'],
-        inventory: 6,
-        available: 2,
-        badge: 'Ultra Exclusive',
-        sectionInfo: 'Stage Front Diamond Box Suite'
+        available: 0,
+        badge: 'SOLD OUT',
+        sectionInfo: 'Standard Seating Section'
       }
     ]
   },
