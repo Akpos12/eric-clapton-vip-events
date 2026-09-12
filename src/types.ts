@@ -72,7 +72,9 @@ export type TicketStatus =
   | 'BOOKING CONFIRMED'
   | 'TICKET ISSUED'
   | 'EVENT CANCELLED'
-  | 'REFUNDED';
+  | 'REFUNDED'
+  | 'INVALID / LEGACY'
+  | 'INVALID';
 
 export interface TicketAttendee {
   fullName: string;
@@ -126,6 +128,13 @@ export interface TicketOrder {
   qrPayload: string; // text embedded in QR for verification
   entryInstructions: string;
   adminNotes?: string;
+  inventoryVersion?: string; // 'v1' (legacy inventory) or 'v2' (current Sept 15 inventory)
+  isLegacy?: boolean;
+  legacyInvalidatedAt?: string;
+  legacyInvalidationReason?: string;
+  checkedIn?: boolean;
+  checkedInAt?: string;
+  checkedInBy?: string;
   createdAt: string;
   updatedAt: string;
 }

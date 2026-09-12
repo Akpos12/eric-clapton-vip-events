@@ -23,16 +23,19 @@ import {
   MessageSquare,
   Copy,
   Check,
+  XCircle,
+  AlertTriangle,
   Image as ImageIcon
 } from 'lucide-react';
 import { TicketOrder, MeetGreetRequest } from '../types';
-import { getOrderById, getMeetGreetById, searchTickets } from '../lib/api';
+import { getOrderById, getMeetGreetById, searchTickets, isLegacy15thTicket, validateTicketForScan } from '../lib/api';
 import { downloadTicketPDF, downloadTicketPNG, generateTicketQRCode } from '../lib/ticketGenerator';
 
 interface CheckTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectEvent?: (eventId: string) => void;
+  onPurchaseNewTicketFor15th?: () => void;
   onOpenConciergeWithEmail?: (email: string, bookingRef?: string) => void;
   initialQuery?: string;
 }
@@ -41,6 +44,7 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
   isOpen,
   onClose,
   onSelectEvent,
+  onPurchaseNewTicketFor15th,
   onOpenConciergeWithEmail,
   initialQuery = ''
 }) => {
@@ -97,8 +101,9 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
         }
 
         if (order) {
-          setTicketOrder(order);
-          const qr = await generateTicketQRCode(order);
+          const val = validateTicketForScan(order);
+          setTicketOrder(val.order);
+          const qr = await generateTicketQRCode(val.order);
           setQrCodeUrl(qr);
         } else {
           // Fallback check if it might be an MGR
@@ -121,6 +126,15 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     await performSearch(searchQuery);
+  };
+
+  const handlePurchaseNewTicket = () => {
+    onClose();
+    if (onPurchaseNewTicketFor15th) {
+      onPurchaseNewTicketFor15th();
+    } else if (onSelectEvent) {
+      onSelectEvent('ec-stpaul-2026');
+    }
   };
 
   const handleDownloadPDF = async () => {
@@ -166,9 +180,18 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
     }
   };
 
+  const isLegacy15th = ticketOrder ? isLegacy15thTicket(ticketOrder) : false;
   const isOrderApproved = ticketOrder ? (ticketOrder.paymentStatus === 'Payment Confirmed' || ticketOrder.ticketStatus === 'TICKET ISSUED') : false;
 
   const getStatusBadge = (order: TicketOrder) => {
+    if (isLegacy15thTicket(order) || order.ticketStatus === 'INVALID / LEGACY' || order.isLegacy) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-rose-950/80 text-rose-300 border border-rose-500 font-mono tracking-wider">
+          <XCircle className="w-3.5 h-3.5 text-rose-400" />
+          INVALID / LEGACY
+        </span>
+      );
+    }
     if (order.paymentStatus === 'Payment Confirmed' || order.ticketStatus === 'TICKET ISSUED') {
       return (
         <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">
@@ -290,14 +313,22 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
               <span className="text-[#F5F5DC]/40 font-mono">Quick lookup references:</span>
               <button
                 type="button"
-                onClick={() => { setSearchQuery('EC-2026-89421'); }}
+                onClick={() => { setSearchQuery('EC-2026-15082'); performSearch('EC-2026-15082'); }}
+                className="px-2 py-0.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 font-mono border border-rose-700/50 cursor-pointer"
+                title="Test validation for previously issued 15th pass"
+              >
+                #EC-2026-15082 (15th Legacy Pass)
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSearchQuery('EC-2026-89421'); performSearch('EC-2026-89421'); }}
                 className="px-2 py-0.5 bg-[#1A1A1D] hover:bg-white/10 text-[#D4AF37] font-mono border border-white/10 cursor-pointer"
               >
                 #EC-2026-89421 (Detroit Pass)
               </button>
               <button
                 type="button"
-                onClick={() => { setSearchQuery('MGR-2026-44109'); }}
+                onClick={() => { setSearchQuery('MGR-2026-44109'); performSearch('MGR-2026-44109'); }}
                 className="px-2 py-0.5 bg-[#1A1A1D] hover:bg-white/10 text-[#D4AF37] font-mono border border-white/10 cursor-pointer"
               >
                 MGR-2026-44109 (Meet & Greet)
@@ -325,8 +356,45 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
           {ticketOrder && (
             <div className="space-y-4">
               
-              {/* Approval status callout */}
-              {!isOrderApproved ? (
+              {/* Conditional Alert / Status Callout */}
+              {isLegacy15th ? (
+                /* MANDATED INVALIDATION BANNER FOR 15th LEGACY TICKETS */
+                <div className="p-5 bg-rose-950/95 border-2 border-rose-500 space-y-3 shadow-2xl">
+                  <div className="flex items-start gap-3.5">
+                    <AlertCircle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1.5">
+                      <div className="font-mono text-[11px] font-bold text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <XCircle className="w-4 h-4" />
+                        VENUE CHECK-IN DENIED • LEGACY TICKET
+                      </div>
+                      <h3 className="font-mono text-sm sm:text-base font-bold text-white tracking-wide leading-snug">
+                        TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.
+                      </h3>
+                      <p className="text-xs text-rose-200/90 leading-relaxed font-sans">
+                        This pass was issued under the previous ticket inventory for the Eric Clapton concert on September 15, 2026 in St. Paul, MN. In accordance with updated tour admission regulations, this ticket cannot be checked in or accepted for arena entry. Historical transaction records remain retained for administrative and audit purposes.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Purchase New Ticket Callout */}
+                  <div className="pt-3 border-t border-rose-800/80 flex flex-wrap items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={handlePurchaseNewTicket}
+                      className="px-6 py-3 bg-[#D4AF37] hover:bg-[#c49f2e] text-black font-serif font-bold text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl cursor-pointer transition-transform active:scale-95"
+                    >
+                      <Ticket className="w-4 h-4" />
+                      <span>Purchase New Ticket</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <div className="text-[11px] font-mono text-rose-300 flex items-center gap-2">
+                      <span className="text-emerald-400 font-bold">VIP: $2,000 (2 Left)</span>
+                      <span>•</span>
+                      <span className="text-rose-400 font-medium line-through">Standard: $1,000 (SOLD OUT)</span>
+                    </div>
+                  </div>
+                </div>
+              ) : !isOrderApproved ? (
                 <div className="p-4 bg-amber-500/10 border border-amber-500/40 space-y-2">
                   <div className="flex items-center gap-2 text-amber-300 font-serif font-bold text-sm">
                     <Clock className="w-4 h-4" />
@@ -351,14 +419,29 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
               {/* Pass Visual Card */}
               <div
                 id="digital-pass-card-render"
-                className="bg-[#0B0B0D] border border-[#D4AF37] p-6 shadow-2xl relative overflow-hidden"
+                className={`bg-[#0B0B0D] p-6 shadow-2xl relative overflow-hidden ${
+                  isLegacy15th ? 'border-2 border-rose-500/80' : 'border border-[#D4AF37]'
+                }`}
               >
+                {/* Legacy Invalid Watermark Banner inside Pass */}
+                {isLegacy15th && (
+                  <div className="mb-4 p-3 bg-rose-950/90 border border-rose-600 flex items-center gap-2 text-rose-200 text-xs font-mono font-bold uppercase tracking-wider">
+                    <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span>DO NOT ACCEPT AT GATE — INVALID LEGACY INVENTORY PASS</span>
+                  </div>
+                )}
+
                 {/* Top Badge and Booking Reference */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-white/10">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs text-[#D4AF37] font-bold tracking-wider">
                       REFERENCE: #{ticketOrder.id}
                     </span>
+                    {ticketOrder.inventoryVersion && (
+                      <span className="text-[10px] font-mono px-2 py-0.5 bg-[#1A1A1D] text-[#F5F5DC]/60 border border-white/10">
+                        {ticketOrder.inventoryVersion.toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <div>{getStatusBadge(ticketOrder)}</div>
                 </div>
@@ -415,18 +498,35 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                   {/* QR code box */}
                   <div className="flex flex-col items-center justify-center p-3 text-center">
                     {qrCodeUrl ? (
-                      <div className="bg-white p-2 text-center shadow-lg">
+                      <div className="relative bg-white p-2 text-center shadow-lg">
                         <img
                           src={qrCodeUrl}
                           alt="Eric Clapton Concert Ticket QR"
-                          className="w-28 h-28 object-contain mx-auto"
+                          className={`w-28 h-28 object-contain mx-auto ${isLegacy15th ? 'opacity-20 grayscale' : ''}`}
                           referrerPolicy="no-referrer"
                         />
-                        <span className="text-[9px] font-mono text-black font-bold uppercase tracking-wider block mt-1">
-                          ERIC CLAPTON GATE PASS
+                        {isLegacy15th && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center p-2 bg-rose-950/90 text-center">
+                            <XCircle className="w-6 h-6 text-rose-400 mb-1" />
+                            <span className="text-[10px] font-mono text-white font-bold uppercase tracking-wider leading-tight">
+                              TICKET INVALID
+                            </span>
+                            <span className="text-[8px] font-mono text-rose-300 uppercase mt-0.5">
+                              NOT VALID FOR 15TH
+                            </span>
+                          </div>
+                        )}
+                        <span className={`text-[9px] font-mono font-bold uppercase tracking-wider block mt-1 ${
+                          isLegacy15th ? 'text-rose-600' : 'text-black'
+                        }`}>
+                          {isLegacy15th ? 'GATE ACCESS DENIED' : 'ERIC CLAPTON GATE PASS'}
                         </span>
                         <span className="text-[8px] font-mono text-zinc-600 block mt-0.5 max-w-[130px] leading-tight">
-                          {isOrderApproved ? 'Live gate scanner pass' : 'Verified reservation barcode'}
+                          {isLegacy15th 
+                            ? 'Do not accept at venue entrance' 
+                            : isOrderApproved 
+                            ? 'Live gate scanner pass' 
+                            : 'Verified reservation barcode'}
                         </span>
                       </div>
                     ) : (
@@ -472,36 +572,63 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleDownloadPDF}
-                    disabled={isExportingPdf}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>{isExportingPdf ? 'Generating PDF Ticket...' : 'Download Printable PDF Ticket'}</span>
-                  </button>
+                  {isLegacy15th ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handlePurchaseNewTicket}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-[#D4AF37] hover:bg-[#c49f2e] text-black font-serif font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer shadow-lg"
+                      >
+                        <Ticket className="w-4 h-4" />
+                        <span>Purchase New Ticket for 15th</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={handleDownloadPNG}
-                    disabled={isExportingPng}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-[#1A1A1D] hover:bg-white/10 text-[#F5F5DC] border border-white/10 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
-                    title="Save pass as digital image to your device photos"
-                  >
-                    <ImageIcon className="w-4 h-4 text-[#D4AF37]" />
-                    <span>{isExportingPng ? 'Saving Image...' : 'Save PNG Pass'}</span>
-                  </button>
+                      <button
+                        type="button"
+                        onClick={handleDownloadPDF}
+                        disabled={isExportingPdf}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[#1A1A1D] hover:bg-white/10 text-rose-300 border border-rose-800/60 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                        title="Download audit copy for your records (marked INVALID)"
+                      >
+                        <Download className="w-4 h-4 text-rose-400" />
+                        <span>{isExportingPdf ? 'Generating...' : 'Audit Copy (PDF - Marked Invalid)'}</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleDownloadPDF}
+                        disabled={isExportingPdf}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-[#D4AF37] hover:bg-[#F5F5DC] text-black font-bold text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>{isExportingPdf ? 'Generating PDF Ticket...' : 'Download Printable PDF Ticket'}</span>
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={handleCopyLink}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-[#121214] hover:bg-[#1A1A1D] text-[#F5F5DC] border border-white/10 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer"
-                    title="Copy direct verification link for this concert pass"
-                  >
-                    {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-[#D4AF37]" />}
-                    <span>{copiedLink ? 'Link Copied!' : 'Copy Pass Link'}</span>
-                  </button>
+                      <button
+                        type="button"
+                        onClick={handleDownloadPNG}
+                        disabled={isExportingPng}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[#1A1A1D] hover:bg-white/10 text-[#F5F5DC] border border-white/10 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                        title="Save pass as digital image to your device photos"
+                      >
+                        <ImageIcon className="w-4 h-4 text-[#D4AF37]" />
+                        <span>{isExportingPng ? 'Saving Image...' : 'Save PNG Pass'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleCopyLink}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[#121214] hover:bg-[#1A1A1D] text-[#F5F5DC] border border-white/10 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer"
+                        title="Copy direct verification link for this concert pass"
+                      >
+                        {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-[#D4AF37]" />}
+                        <span>{copiedLink ? 'Link Copied!' : 'Copy Pass Link'}</span>
+                      </button>
+                    </>
+                  )}
 
                   {onOpenConciergeWithEmail && (
                     <button

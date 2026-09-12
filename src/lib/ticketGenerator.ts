@@ -148,10 +148,26 @@ export async function generateDirectVectorTicketPDF(order: TicketOrder): Promise
   pdf.rect(13, 13, width - 26, height - 26);
 
   // Top Header Eyebrow
-  pdf.setTextColor(212, 175, 55);
-  pdf.setFontSize(9);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('ERIC CLAPTON WORLD TOUR • OFFICIAL VIP GATE PASS', width / 2, 24, { align: 'center' });
+  const isLegacy15th = 
+    order.ticketStatus === 'INVALID / LEGACY' || 
+    order.isLegacy === true ||
+    ((order.eventId === 'ec-stpaul-2026' || order.eventSnapshot?.eventDate === '2026-09-15') && order.inventoryVersion !== 'v2');
+
+  if (isLegacy15th) {
+    // High-visibility Invalid Banner
+    pdf.setFillColor(120, 20, 30);
+    pdf.rect(13, 13, width - 26, 14, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('TICKET INVALID — This ticket is no longer valid for the 15th.', width / 2, 19, { align: 'center' });
+    pdf.text('Please purchase a new ticket for this event.', width / 2, 24, { align: 'center' });
+  } else {
+    pdf.setTextColor(212, 175, 55);
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('ERIC CLAPTON WORLD TOUR • OFFICIAL VIP GATE PASS', width / 2, 24, { align: 'center' });
+  }
 
   // Concert Title
   pdf.setTextColor(245, 245, 220);
@@ -263,7 +279,12 @@ export async function generateDirectVectorTicketPDF(order: TicketOrder): Promise
   pdf.setTextColor(220, 220, 200);
   pdf.setFontSize(7.5);
   pdf.setFont('helvetica', 'normal');
-  const instructions = [
+  const instructions = isLegacy15th ? [
+    '• TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.',
+    '• This ticket was issued under the previous inventory version for September 15 at Grand Casino Arena.',
+    '• DO NOT ACCEPT AT VENUE GATE — Gate admission cannot be granted with this legacy pass.',
+    '• Historical record retained for audit purposes. Visit portal to purchase a current valid ticket.'
+  ] : [
     '• Present this digital PDF pass or printout at the VIP Hospitality Gate entrance.',
     '• Photo ID matching the primary attendee name may be requested at check-in.',
     '• VIP credentials, commemorative laminates, and lounge access wristbands will be issued at the desk.',

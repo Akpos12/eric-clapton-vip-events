@@ -790,6 +790,106 @@ export const SAMPLE_ORDERS: TicketOrder[] = [
     entryInstructions: 'VIP Entrance at Dell Technologies Plaza VIP Gate B once pass is issued by tour administrator.',
     createdAt: '2026-08-21T10:11:00Z',
     updatedAt: '2026-08-21T10:12:00Z'
+  },
+  {
+    id: 'EC-2026-15082',
+    customerId: 'user-demo-3',
+    eventId: 'ec-stpaul-2026',
+    eventSnapshot: {
+      eventName: 'Eric Clapton Live at Grand Casino Arena',
+      venue: 'Grand Casino Arena',
+      city: 'St. Paul, Minnesota',
+      country: 'United States',
+      eventDate: '2026-09-15',
+      doorsOpen: '18:00',
+      concertTime: '19:30',
+      heroImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1200&auto=format&fit=crop'
+    },
+    tierId: 'stp-tier-ga',
+    tierName: 'General Admission',
+    quantity: 2,
+    seatInfo: 'General Admission Floor (Legacy Tier)',
+    attendee: {
+      fullName: 'Marcus Vance',
+      email: 'marcus.vance@example.com',
+      phone: '+1 (651) 555-0144',
+      country: 'United States',
+      guestCount: 2,
+      accessibilityRequirements: 'None',
+      specialRequests: 'Historical record from previous inventory issuance.'
+    },
+    pricing: {
+      subtotal: 3600,
+      serviceFee: 200,
+      facilityFee: 100,
+      taxes: 0,
+      total: 3900,
+      currency: 'USD'
+    },
+    paymentMethod: 'Bank Wire Transfer',
+    paymentMethodDetails: 'Wire Ref: WT-15082-MN',
+    paymentStatus: 'Payment Confirmed',
+    ticketStatus: 'INVALID / LEGACY',
+    transactionId: 'tx_legacy_15082_AUDIT',
+    qrPayload: 'EC-TKT-2026-15082-STPAUL-LEGACY-INVALID',
+    entryInstructions: 'TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.',
+    adminNotes: 'Historical record retained for administrative and audit purposes. Pass invalidated under revised September 15 ticket inventory protocol.',
+    inventoryVersion: 'v1',
+    isLegacy: true,
+    legacyInvalidatedAt: '2026-09-12T00:00:00Z',
+    legacyInvalidationReason: 'TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.',
+    createdAt: '2026-08-10T11:20:00Z',
+    updatedAt: '2026-09-12T00:00:00Z'
+  },
+  {
+    id: 'EC-2026-15490',
+    customerId: 'user-demo-4',
+    eventId: 'ec-stpaul-2026',
+    eventSnapshot: {
+      eventName: 'Eric Clapton Live at Grand Casino Arena',
+      venue: 'Grand Casino Arena',
+      city: 'St. Paul, Minnesota',
+      country: 'United States',
+      eventDate: '2026-09-15',
+      doorsOpen: '18:00',
+      concertTime: '19:30',
+      heroImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1200&auto=format&fit=crop'
+    },
+    tierId: 'stp-tier-hosp',
+    tierName: 'Hospitality Package',
+    quantity: 1,
+    seatInfo: 'Club Suite Tier (Legacy Tier)',
+    attendee: {
+      fullName: 'Sarah Jenkins',
+      email: 'sjenkins.claptonfan@example.com',
+      phone: '+1 (651) 555-0298',
+      country: 'United States',
+      guestCount: 1,
+      accessibilityRequirements: 'None',
+      specialRequests: 'Legacy reservation.'
+    },
+    pricing: {
+      subtotal: 2950,
+      serviceFee: 150,
+      facilityFee: 50,
+      taxes: 0,
+      total: 3150,
+      currency: 'USD'
+    },
+    paymentMethod: 'Credit Card (Processed)',
+    paymentMethodDetails: 'Card Ending in 4102',
+    paymentStatus: 'Payment Confirmed',
+    ticketStatus: 'INVALID / LEGACY',
+    transactionId: 'tx_legacy_15490_AUDIT',
+    qrPayload: 'EC-TKT-2026-15490-STPAUL-LEGACY-INVALID',
+    entryInstructions: 'TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.',
+    adminNotes: 'Historical record retained for administrative and audit purposes. Pass invalidated under revised September 15 ticket inventory protocol.',
+    inventoryVersion: 'v1',
+    isLegacy: true,
+    legacyInvalidatedAt: '2026-09-12T00:00:00Z',
+    legacyInvalidationReason: 'TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.',
+    createdAt: '2026-08-14T14:15:00Z',
+    updatedAt: '2026-09-12T00:00:00Z'
   }
 ];
 

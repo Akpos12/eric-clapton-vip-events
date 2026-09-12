@@ -226,27 +226,161 @@ export async function deleteConcertEvent(eventId: string): Promise<void> {
 }
 
 // -------------------------------------------------------------
-// ORDERS & TICKETS SERVICE
+// ORDERS & TICKETS SERVICE WITH SEPT 15 INVENTORY VALIDATION
 // -------------------------------------------------------------
+
+/**
+ * Checks whether an order is for the 15th (St. Paul) and was issued under
+ * the previous ticket inventory/version.
+ * 
+ * Rules:
+ * - Applies ONLY to the Eric Clapton event on the 15th (ec-stpaul-2026, 2026-09-15).
+ * - Tickets for ANY OTHER event date MUST NOT be invalidated.
+ * - Current version 15th tickets have inventoryVersion === 'v2' and tierId === 'stp-tier-vip'.
+ * - All previously issued 15th tickets (inventoryVersion !== 'v2', or legacy tiers, or created prior to cutover) are legacy tickets.
+ * - Does not single out individual customers; evaluates the objective event date and inventory version.
+ */
+export function isLegacy15thTicket(order: TicketOrder): boolean {
+  if (!order) return false;
+
+  const is15th = 
+    order.eventId === 'ec-stpaul-2026' || 
+    order.eventSnapshot?.eventDate === '2026-09-15' ||
+    (order.eventSnapshot?.city?.toLowerCase().includes('st. paul') && order.eventSnapshot?.eventDate?.includes('09-15'));
+
+  // Do not invalidate tickets for any other event date
+  if (!is15th) {
+    return false;
+  }
+
+  // If already stamped as current inventory version 'v2' for the 15th
+  if (order.inventoryVersion === 'v2' && order.tierId === 'stp-tier-vip') {
+    return false;
+  }
+
+  // All previously issued tickets for the 15th are legacy tickets
+  return true;
+}
+
+export interface TicketScanValidationResult {
+  isValid: boolean;
+  isLegacy15th: boolean;
+  ticketStatus: TicketOrder['ticketStatus'];
+  displayMessage: string;
+  canCheckIn: boolean;
+  order: TicketOrder;
+}
+
+/**
+ * Validates a scanned or looked-up ticket.
+ * - All previously issued 15th tickets are marked INVALID.
+ * - Disallows checking in or accepting at the venue.
+ * - Displays exact message: “TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.”
+ * - Retains historical ticket records for administrative/audit purposes and marks their status as INVALID / LEGACY.
+ * - Tickets for other event dates remain valid and unaffected.
+ */
+export function validateTicketForScan(order: TicketOrder): TicketScanValidationResult {
+  if (isLegacy15thTicket(order)) {
+    const legacyOrder: TicketOrder = {
+      ...order,
+      ticketStatus: 'INVALID / LEGACY',
+      isLegacy: true,
+      inventoryVersion: 'v1',
+      legacyInvalidatedAt: order.legacyInvalidatedAt || new Date().toISOString(),
+      legacyInvalidationReason: 'TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.',
+      entryInstructions: 'TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.'
+    };
+
+    return {
+      isValid: false,
+      isLegacy15th: true,
+      ticketStatus: 'INVALID / LEGACY',
+      displayMessage: 'TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.',
+      canCheckIn: false,
+      order: legacyOrder
+    };
+  }
+
+  // Standard evaluation for other concert dates and valid new 15th passes
+  const isApproved = order.paymentStatus === 'Payment Confirmed' || order.ticketStatus === 'TICKET ISSUED';
+  const isDeclinedOrCancelled = 
+    order.ticketStatus === 'REFUNDED' || 
+    order.ticketStatus === 'EVENT CANCELLED' || 
+    order.paymentStatus === 'Payment Failed';
+
+  if (isDeclinedOrCancelled) {
+    return {
+      isValid: false,
+      isLegacy15th: false,
+      ticketStatus: order.ticketStatus,
+      displayMessage: `Ticket status is ${order.ticketStatus}. Venue admission cannot be granted.`,
+      canCheckIn: false,
+      order
+    };
+  }
+
+  return {
+    isValid: isApproved,
+    isLegacy15th: false,
+    ticketStatus: order.ticketStatus,
+    displayMessage: isApproved
+      ? 'Pass verified and active for venue entry.'
+      : 'Booking registered. Payment verification in progress by tour administration.',
+    canCheckIn: isApproved && !order.checkedIn,
+    order
+  };
+}
+
+/**
+ * Normalizes an order record: if it's for the 15th and issued under previous inventory,
+ * retains the complete historical record while ensuring ticketStatus is marked INVALID / LEGACY.
+ * Other dates remain completely unchanged.
+ */
+export function normalizeOrderForAudit(order: TicketOrder): TicketOrder {
+  if (isLegacy15thTicket(order)) {
+    return {
+      ...order,
+      ticketStatus: 'INVALID / LEGACY',
+      isLegacy: true,
+      inventoryVersion: 'v1',
+      legacyInvalidationReason: 'TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.',
+      entryInstructions: 'TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.'
+    };
+  }
+  return order;
+}
+
 export async function createTicketOrder(order: TicketOrder): Promise<TicketOrder> {
+  // If creating an order for the 15th, stamp it with the current inventory version 'v2'
+  const is15th = 
+    order.eventId === 'ec-stpaul-2026' || 
+    order.eventSnapshot?.eventDate === '2026-09-15';
+
+  const finalOrder: TicketOrder = {
+    ...order,
+    inventoryVersion: is15th ? 'v2' : (order.inventoryVersion || 'v1'),
+    isLegacy: is15th ? false : !!order.isLegacy
+  };
+
   try {
-    await withTimeout(setDoc(doc(db, 'ticket_orders', order.id), order), 2000);
+    await withTimeout(setDoc(doc(db, 'ticket_orders', finalOrder.id), finalOrder), 2000);
   } catch {
     // fallback
   }
+
   // Store locally
   const raw = localStorage.getItem(LS_ORDERS_KEY);
   const orders: TicketOrder[] = raw ? JSON.parse(raw) : SAMPLE_ORDERS;
-  orders.unshift(order);
+  orders.unshift(finalOrder);
   localStorage.setItem(LS_ORDERS_KEY, JSON.stringify(orders));
 
   // Deduct inventory
   try {
-    const event = await getConcertById(order.eventId);
+    const event = await getConcertById(finalOrder.eventId);
     if (event) {
       const updatedCategories = event.ticketCategories.map(cat => {
-        if (cat.id === order.tierId) {
-          return { ...cat, available: Math.max(0, cat.available - order.quantity) };
+        if (cat.id === finalOrder.tierId) {
+          return { ...cat, available: Math.max(0, cat.available - finalOrder.quantity) };
         }
         return cat;
       });
@@ -256,44 +390,131 @@ export async function createTicketOrder(order: TicketOrder): Promise<TicketOrder
     // fallback
   }
 
-  return order;
+  return finalOrder;
 }
 
 export async function getTicketOrders(): Promise<TicketOrder[]> {
+  let loadedOrders: TicketOrder[] = [];
   try {
     const snap = await withTimeout(getDocs(collection(db, 'ticket_orders')), 2000);
     if (!snap.empty) {
-      return snap.docs.map(d => d.data() as TicketOrder);
+      loadedOrders = snap.docs.map(d => d.data() as TicketOrder);
     }
   } catch {
     // fallback
   }
-  const raw = localStorage.getItem(LS_ORDERS_KEY);
-  return raw ? JSON.parse(raw) : SAMPLE_ORDERS;
+
+  if (loadedOrders.length === 0) {
+    const raw = localStorage.getItem(LS_ORDERS_KEY);
+    loadedOrders = raw ? JSON.parse(raw) : SAMPLE_ORDERS;
+  }
+
+  // Apply audit normalization:
+  // Retains all historical records, but marks previously issued 15th tickets as INVALID / LEGACY.
+  // Other event dates are not invalidated!
+  return loadedOrders.map(normalizeOrderForAudit);
 }
 
 export async function getOrderById(bookingRef: string): Promise<TicketOrder | null> {
   const cleanRef = bookingRef.trim().toUpperCase().replace(/^#/, '');
   try {
     const snap = await withTimeout(getDoc(doc(db, 'ticket_orders', cleanRef)), 1500);
-    if (snap.exists()) return snap.data() as TicketOrder;
+    if (snap.exists()) {
+      return normalizeOrderForAudit(snap.data() as TicketOrder);
+    }
   } catch {
     // fallback
   }
   const orders = await getTicketOrders();
-  return orders.find(o => o.id.toUpperCase() === cleanRef || o.id.toUpperCase() === `#${cleanRef}`) || null;
+  const found = orders.find(o => o.id.toUpperCase() === cleanRef || o.id.toUpperCase() === `#${cleanRef}`);
+  return found ? normalizeOrderForAudit(found) : null;
 }
 
 export async function searchTickets(queryStr: string): Promise<TicketOrder[]> {
   const clean = queryStr.trim().toLowerCase();
   if (!clean) return [];
   const orders = await getTicketOrders();
-  return orders.filter(o => 
-    o.id.toLowerCase().includes(clean) ||
-    o.attendee.email.toLowerCase().includes(clean) ||
-    o.attendee.fullName.toLowerCase().includes(clean) ||
-    (o.qrPayload && o.qrPayload.toLowerCase().includes(clean))
-  );
+  return orders
+    .filter(o => 
+      o.id.toLowerCase().includes(clean) ||
+      o.attendee.email.toLowerCase().includes(clean) ||
+      o.attendee.fullName.toLowerCase().includes(clean) ||
+      (o.qrPayload && o.qrPayload.toLowerCase().includes(clean))
+    )
+    .map(normalizeOrderForAudit);
+}
+
+export async function checkInGatePass(
+  orderId: string, 
+  staffName = 'Venue Gate Security'
+): Promise<{ success: boolean; message: string; order?: TicketOrder }> {
+  const order = await getOrderById(orderId);
+  if (!order) {
+    return { success: false, message: `Pass reference #${orderId} not found in tour database.` };
+  }
+
+  const validation = validateTicketForScan(order);
+
+  // Check whether it is an invalid/legacy ticket for the 15th
+  if (validation.isLegacy15th) {
+    return {
+      success: false,
+      message: 'TICKET INVALID — This ticket is no longer valid for the 15th. Please purchase a new ticket for this event.',
+      order: validation.order
+    };
+  }
+
+  if (!validation.isValid) {
+    return {
+      success: false,
+      message: validation.displayMessage || 'Ticket is not valid for venue entry.',
+      order: validation.order
+    };
+  }
+
+  if (order.checkedIn) {
+    return {
+      success: false,
+      message: `Pass #${order.id} was already checked in at ${order.checkedInAt ? new Date(order.checkedInAt).toLocaleTimeString() : 'earlier'} by ${order.checkedInBy || 'Gate Staff'}.`,
+      order
+    };
+  }
+
+  // Check in pass
+  const checkedInOrder: TicketOrder = {
+    ...order,
+    checkedIn: true,
+    checkedInAt: new Date().toISOString(),
+    checkedInBy: staffName,
+    updatedAt: new Date().toISOString()
+  };
+
+  try {
+    await withTimeout(updateDoc(doc(db, 'ticket_orders', order.id), {
+      checkedIn: true,
+      checkedInAt: checkedInOrder.checkedInAt,
+      checkedInBy: staffName,
+      updatedAt: checkedInOrder.updatedAt
+    }), 1500);
+  } catch {
+    // fallback
+  }
+
+  const raw = localStorage.getItem(LS_ORDERS_KEY);
+  if (raw) {
+    const list: TicketOrder[] = JSON.parse(raw);
+    const idx = list.findIndex(o => o.id === order.id);
+    if (idx >= 0) {
+      list[idx] = checkedInOrder;
+      localStorage.setItem(LS_ORDERS_KEY, JSON.stringify(list));
+    }
+  }
+
+  return {
+    success: true,
+    message: `Pass #${order.id} verified and checked in for ${order.attendee.fullName} (${order.tierName}). Gate admission granted.`,
+    order: checkedInOrder
+  };
 }
 
 export async function updateOrderStatus(
