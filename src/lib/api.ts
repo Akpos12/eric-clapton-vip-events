@@ -75,8 +75,22 @@ export async function seedInitialDataIfNeeded() {
     // Update cached events with new schedule
     localStorage.setItem(LS_EVENTS_KEY, JSON.stringify(INITIAL_EVENTS));
   }
-  if (!localStorage.getItem(LS_ORDERS_KEY)) {
+  const rawOrders = localStorage.getItem(LS_ORDERS_KEY);
+  if (!rawOrders) {
     localStorage.setItem(LS_ORDERS_KEY, JSON.stringify(SAMPLE_ORDERS));
+  } else {
+    try {
+      const parsed: TicketOrder[] = JSON.parse(rawOrders);
+      if (!parsed.some(o => o.id === 'EC-2026-95018')) {
+        const sampleV2 = SAMPLE_ORDERS.find(o => o.id === 'EC-2026-95018');
+        if (sampleV2) {
+          parsed.unshift(sampleV2);
+          localStorage.setItem(LS_ORDERS_KEY, JSON.stringify(parsed));
+        }
+      }
+    } catch {
+      localStorage.setItem(LS_ORDERS_KEY, JSON.stringify(SAMPLE_ORDERS));
+    }
   }
   if (!localStorage.getItem(LS_MGR_KEY)) {
     localStorage.setItem(LS_MGR_KEY, JSON.stringify(SAMPLE_MEET_GREETS));
@@ -434,7 +448,7 @@ export async function searchTickets(queryStr: string): Promise<TicketOrder[]> {
   const clean = queryStr.trim().toLowerCase();
   if (!clean) return [];
   const orders = await getTicketOrders();
-  return orders
+  const matched = orders
     .filter(o => 
       o.id.toLowerCase().includes(clean) ||
       o.attendee.email.toLowerCase().includes(clean) ||
@@ -442,6 +456,20 @@ export async function searchTickets(queryStr: string): Promise<TicketOrder[]> {
       (o.qrPayload && o.qrPayload.toLowerCase().includes(clean))
     )
     .map(normalizeOrderForAudit);
+
+  // Intelligently rank results:
+  // 1. Current valid active passes come ahead of legacy/invalid passes
+  // 2. Newer bookings (createdAt desc) come before older bookings
+  return matched.sort((a, b) => {
+    const aLegacy = isLegacy15thTicket(a);
+    const bLegacy = isLegacy15thTicket(b);
+    if (!aLegacy && bLegacy) return -1;
+    if (aLegacy && !bLegacy) return 1;
+
+    const aTime = new Date(a.createdAt || 0).getTime();
+    const bTime = new Date(b.createdAt || 0).getTime();
+    return bTime - aTime;
+  });
 }
 
 export async function checkInGatePass(

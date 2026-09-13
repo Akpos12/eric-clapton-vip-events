@@ -325,6 +325,10 @@ export default function App() {
           const ev = events.find(e => e.id === eventId);
           if (ev) handleOpenBooking(ev);
         }}
+        onPurchaseNewTicketFor15th={() => {
+          const ev = events.find(e => e.id === 'ec-stpaul-2026' || e.date === '2026-09-15');
+          if (ev) handleOpenBooking(ev, 'stp-tier-vip');
+        }}
         onOpenConciergeWithEmail={handleOpenConciergeWithEmail}
       />
 

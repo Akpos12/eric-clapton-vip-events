@@ -51,6 +51,7 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [loading, setLoading] = useState(false);
   const [ticketOrder, setTicketOrder] = useState<TicketOrder | null>(null);
+  const [matchedOrders, setMatchedOrders] = useState<TicketOrder[]>([]);
   const [meetGreet, setMeetGreet] = useState<MeetGreetRequest | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -59,6 +60,13 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
   const [isExportingPng, setIsExportingPng] = useState(false);
   const [viewProofModal, setViewProofModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const selectOrder = async (order: TicketOrder) => {
+    const val = validateTicketForScan(order);
+    setTicketOrder(val.order);
+    const qr = await generateTicketQRCode(val.order);
+    setQrCodeUrl(qr);
+  };
 
   useEffect(() => {
     if (initialQuery) {
@@ -78,6 +86,7 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
     setErrorMsg('');
     setDownloadSuccessMsg('');
     setTicketOrder(null);
+    setMatchedOrders([]);
     setMeetGreet(null);
     setQrCodeUrl('');
 
@@ -92,19 +101,21 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
       } else {
         // Try direct order lookup
         let order = await getOrderById(query);
-        if (!order) {
-          // Try email / keyword search
-          const results = await searchTickets(query);
-          if (results.length > 0) {
-            order = results[0];
+        let foundOrders: TicketOrder[] = [];
+        if (order) {
+          foundOrders = [order];
+        } else {
+          // Try email / keyword / attendee name search
+          foundOrders = await searchTickets(query);
+          if (foundOrders.length > 0) {
+            order = foundOrders[0];
           }
         }
 
+        setMatchedOrders(foundOrders);
+
         if (order) {
-          const val = validateTicketForScan(order);
-          setTicketOrder(val.order);
-          const qr = await generateTicketQRCode(val.order);
-          setQrCodeUrl(qr);
+          await selectOrder(order);
         } else {
           // Fallback check if it might be an MGR
           const mgr = await getMeetGreetById(query);
@@ -313,6 +324,14 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
               <span className="text-[#F5F5DC]/40 font-mono">Quick lookup references:</span>
               <button
                 type="button"
+                onClick={() => { setSearchQuery('EC-2026-95018'); performSearch('EC-2026-95018'); }}
+                className="px-2 py-0.5 bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 font-mono border border-emerald-700/50 cursor-pointer"
+                title="Direct lookup of new valid 15th VIP pass"
+              >
+                #EC-2026-95018 (New Valid 15th Pass)
+              </button>
+              <button
+                type="button"
                 onClick={() => { setSearchQuery('EC-2026-15082'); performSearch('EC-2026-15082'); }}
                 className="px-2 py-0.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 font-mono border border-rose-700/50 cursor-pointer"
                 title="Test validation for previously issued 15th pass"
@@ -321,8 +340,16 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => { setSearchQuery('EC-2026-89421'); performSearch('EC-2026-89421'); }}
+                onClick={() => { setSearchQuery('marcus.vance@example.com'); performSearch('marcus.vance@example.com'); }}
                 className="px-2 py-0.5 bg-[#1A1A1D] hover:bg-white/10 text-[#D4AF37] font-mono border border-white/10 cursor-pointer"
+                title="Search by email holding both formal and new ticket"
+              >
+                marcus.vance@example.com (2 Passes)
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSearchQuery('EC-2026-89421'); performSearch('EC-2026-89421'); }}
+                className="px-2 py-0.5 bg-[#1A1A1D] hover:bg-white/10 text-[#F5F5DC]/80 font-mono border border-white/10 cursor-pointer"
               >
                 #EC-2026-89421 (Detroit Pass)
               </button>
@@ -356,6 +383,74 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
           {ticketOrder && (
             <div className="space-y-4">
               
+              {/* Multi-pass Switcher if attendee has multiple bookings under same email/name */}
+              {matchedOrders.length > 1 && (
+                <div className="p-4 bg-[#0B0B0D] border border-[#D4AF37]/30 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Ticket className="w-4 h-4 text-[#D4AF37]" />
+                      <span className="text-xs font-mono uppercase tracking-wider text-[#D4AF37] font-bold">
+                        {matchedOrders.length} Passes Registered to this Attendee / Email
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-[#F5F5DC]/60 font-mono">
+                      Select a pass below to switch view & download:
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {matchedOrders.map((ord) => {
+                      const isSel = ticketOrder?.id === ord.id;
+                      const isLeg = isLegacy15thTicket(ord);
+                      return (
+                        <button
+                          key={ord.id}
+                          type="button"
+                          onClick={() => selectOrder(ord)}
+                          className={`p-3 text-left transition-all border cursor-pointer relative ${
+                            isSel
+                              ? isLeg
+                                ? 'bg-rose-950/70 border-rose-500 ring-1 ring-rose-500'
+                                : 'bg-[#1A1A1D] border-[#D4AF37] ring-1 ring-[#D4AF37]'
+                              : isLeg
+                              ? 'bg-[#121214] border-rose-900/40 opacity-70 hover:opacity-100 hover:border-rose-700'
+                              : 'bg-[#121214] border-white/10 opacity-80 hover:opacity-100 hover:border-[#D4AF37]/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className={`font-mono text-xs font-bold ${isLeg ? 'text-rose-400' : 'text-[#D4AF37]'}`}>
+                              #{ord.id}
+                            </span>
+                            {isLeg ? (
+                              <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase bg-rose-950 text-rose-300 border border-rose-800 font-bold">
+                                Legacy (15th) — Void
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase bg-emerald-950 text-emerald-300 border border-emerald-700 font-bold flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                Valid Active Pass
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1 text-xs text-[#F5F5DC] font-medium truncate">
+                            {ord.eventSnapshot.eventName}
+                          </div>
+                          <div className="text-[10px] text-[#F5F5DC]/60 font-mono flex items-center justify-between mt-1">
+                            <span>{ord.tierName} • {ord.quantity} Pass</span>
+                            <span>{new Date(ord.createdAt).toLocaleDateString()}</span>
+                          </div>
+                          {isSel && (
+                            <div className={`mt-2 text-[10px] font-mono flex items-center gap-1 ${isLeg ? 'text-rose-400 font-bold' : 'text-[#D4AF37] font-bold'}`}>
+                              <span>▶ Selected for Download</span>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Conditional Alert / Status Callout */}
               {isLegacy15th ? (
                 /* MANDATED INVALIDATION BANNER FOR 15th LEGACY TICKETS */

@@ -54,7 +54,8 @@ import {
   saveConcertEvent, 
   deleteConcertEvent,
   addSupportMessage,
-  updateSupportTicketStatus
+  updateSupportTicketStatus,
+  isLegacy15thTicket
 } from '../lib/api';
 
 interface AdminDashboardProps {
@@ -76,7 +77,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const [adminTab, setAdminTab] = useState<'overview' | 'bookings' | 'payment-methods' | 'events' | 'meet-greets' | 'customer-care' | 'analytics'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
-  const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'approved' | 'declined'>('all');
+  const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'approved' | 'declined' | 'legacy'>('all');
   const [selectedEventForEdit, setSelectedEventForEdit] = useState<ConcertEvent | null>(null);
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
   const [selectedEventForPrices, setSelectedEventForPrices] = useState<ConcertEvent | null>(null);
@@ -118,6 +119,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     .filter(o => o.ticketStatus === 'TICKET ISSUED' || o.ticketStatus === 'BOOKING CONFIRMED')
     .reduce((sum, o) => sum + o.quantity, 0);
   const pendingPaymentsCount = orders.filter(o => o.paymentStatus === 'Payment Pending' || o.ticketStatus === 'PAYMENT PENDING').length;
+  const legacy15thCount = orders.filter(o => isLegacy15thTicket(o)).length;
   const pendingMgrCount = meetGreets.filter(m => m.status === 'Request Received' || m.status === 'Under Review' || m.status === 'Awaiting Organizer Confirmation').length;
   const openSupportCount = supportTickets.filter(t => t.status === 'Open' || t.status === 'In Progress').length;
 
@@ -289,10 +291,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       return o.paymentStatus === 'Payment Pending' || o.ticketStatus === 'PAYMENT PENDING';
     }
     if (orderFilter === 'approved') {
-      return o.paymentStatus === 'Payment Confirmed' || o.ticketStatus === 'TICKET ISSUED';
+      return (o.paymentStatus === 'Payment Confirmed' || o.ticketStatus === 'TICKET ISSUED') && !isLegacy15thTicket(o);
     }
     if (orderFilter === 'declined') {
       return o.paymentStatus === 'Payment Failed' || o.ticketStatus === 'REFUNDED';
+    }
+    if (orderFilter === 'legacy') {
+      return isLegacy15thTicket(o);
     }
     return true;
   });
@@ -521,14 +526,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 { id: 'pending', label: `Pending Approval (${pendingPaymentsCount})` },
                 { id: 'approved', label: 'Approved' },
                 { id: 'declined', label: 'Declined/Refunded' },
+                { id: 'legacy', label: `Legacy/Invalid 15th (${legacy15thCount})` },
               ].map((f) => (
                 <button
                   key={f.id}
                   onClick={() => setOrderFilter(f.id as any)}
                   className={`px-3 py-1.5 transition-colors cursor-pointer ${
                     orderFilter === f.id
-                      ? 'bg-[#D4AF37] text-black font-bold'
-                      : 'bg-[#1A1A1D] text-[#F5F5DC]/70 hover:text-white border border-white/5'
+                      ? f.id === 'legacy' ? 'bg-rose-600 text-white font-bold' : 'bg-[#D4AF37] text-black font-bold'
+                      : f.id === 'legacy' && legacy15thCount > 0 ? 'bg-rose-950/40 text-rose-300 border border-rose-800/60 hover:bg-rose-900/50' : 'bg-[#1A1A1D] text-[#F5F5DC]/70 hover:text-white border border-white/5'
                   }`}
                 >
                   {f.label}
@@ -560,14 +566,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tr>
                 ) : (
                   filteredOrders.map((o) => {
-                    const isPending = o.paymentStatus === 'Payment Pending' || o.ticketStatus === 'PAYMENT PENDING';
-                    const isApproved = o.paymentStatus === 'Payment Confirmed' || o.ticketStatus === 'TICKET ISSUED';
-                    const isFailed = o.paymentStatus === 'Payment Failed' || o.ticketStatus === 'REFUNDED';
+                    const isLegacy = isLegacy15thTicket(o);
+                    const isPending = !isLegacy && (o.paymentStatus === 'Payment Pending' || o.ticketStatus === 'PAYMENT PENDING');
+                    const isApproved = !isLegacy && (o.paymentStatus === 'Payment Confirmed' || o.ticketStatus === 'TICKET ISSUED');
+                    const isFailed = !isLegacy && (o.paymentStatus === 'Payment Failed' || o.ticketStatus === 'REFUNDED');
 
                     return (
-                      <tr key={o.id} className="hover:bg-white/5 transition-colors">
-                        <td className="p-3.5 font-mono text-[#D4AF37] font-bold">
-                          #{o.id}
+                      <tr key={o.id} className={`transition-colors ${isLegacy ? 'bg-rose-950/15 hover:bg-rose-950/25' : 'hover:bg-white/5'}`}>
+                        <td className="p-3.5 font-mono">
+                          <div className={isLegacy ? 'text-rose-400 font-bold' : 'text-[#D4AF37] font-bold'}>
+                            #{o.id}
+                          </div>
+                          {isLegacy && (
+                            <span className="inline-block mt-0.5 px-1.5 py-0.2 text-[8.5px] font-mono uppercase bg-rose-950 text-rose-300 border border-rose-800/80">
+                              Legacy Pass (v1)
+                            </span>
+                          )}
                         </td>
                         <td className="p-3.5">
                           <div className="font-serif font-bold text-[#F5F5DC]">{o.attendee.fullName}</div>
@@ -600,7 +614,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           )}
                         </td>
                         <td className="p-3.5">
-                          {isApproved ? (
+                          {isLegacy ? (
+                            <div className="space-y-1">
+                              <span className="px-2 py-0.5 text-[10px] font-mono uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1 w-fit font-bold">
+                                <XCircle className="w-3 h-3 text-rose-400" />
+                                INVALID / LEGACY (15th)
+                              </span>
+                              <div className="text-[9px] text-rose-300/80 font-mono">
+                                Gate Entry Denied • Repurchase Required
+                              </div>
+                            </div>
+                          ) : isApproved ? (
                             <span className="px-2 py-0.5 text-[10px] font-mono uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 w-fit">
                               <CheckCircle2 className="w-3 h-3" />
                               Approved
@@ -616,14 +640,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               Pending Approval
                             </span>
                           )}
-                          {o.paymentApprovedAt && (
+                          {!isLegacy && o.paymentApprovedAt && (
                             <div className="text-[9px] text-[#F5F5DC]/40 font-mono mt-0.5">
                               Approved {new Date(o.paymentApprovedAt).toLocaleDateString()}
                             </div>
                           )}
                         </td>
                         <td className="p-3.5 text-right space-x-1.5 whitespace-nowrap">
-                          {isPending && (
+                          {isLegacy ? (
+                            <span className="text-[10px] text-rose-300/70 font-mono italic px-2 py-1 bg-rose-950/50 border border-rose-800/40">
+                              Historical Audit Record
+                            </span>
+                          ) : isPending ? (
                             <>
                               <button
                                 disabled={statusActionLoading}
@@ -641,8 +669,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 Decline
                               </button>
                             </>
-                          )}
-                          {isApproved && (
+                          ) : isApproved ? (
                             <button
                               disabled={statusActionLoading}
                               onClick={() => handleUpdateOrderStatus(o.id, 'Payment Pending', 'PAYMENT PENDING')}
@@ -651,7 +678,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             >
                               Revoke Pass
                             </button>
-                          )}
+                          ) : null}
                         </td>
                       </tr>
                     );

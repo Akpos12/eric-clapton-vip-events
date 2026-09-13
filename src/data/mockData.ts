@@ -697,6 +697,57 @@ export const INITIAL_GIVEAWAYS: FanRewardGiveaway[] = [
 
 export const SAMPLE_ORDERS: TicketOrder[] = [
   {
+    id: 'EC-2026-95018',
+    customerId: 'user-demo-3',
+    eventId: 'ec-stpaul-2026',
+    eventSnapshot: {
+      eventName: 'Eric Clapton Live at Grand Casino Arena',
+      venue: 'Grand Casino Arena',
+      city: 'St. Paul, Minnesota',
+      country: 'United States',
+      eventDate: '2026-09-15',
+      doorsOpen: '18:00',
+      concertTime: '19:30',
+      heroImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1200&auto=format&fit=crop'
+    },
+    tierId: 'stp-tier-vip',
+    tierName: 'VIP Pass',
+    quantity: 2,
+    seatInfo: 'VIP Premier Section 102 - Row A, Seats 5 & 6',
+    attendee: {
+      fullName: 'Marcus Vance',
+      email: 'marcus.vance@example.com',
+      phone: '+1 (651) 555-0144',
+      country: 'United States',
+      guestCount: 2,
+      accessibilityRequirements: 'None',
+      specialRequests: 'Repurchased valid VIP pass for September 15 St. Paul concert.'
+    },
+    pricing: {
+      subtotal: 4000,
+      serviceFee: 200,
+      facilityFee: 100,
+      taxes: 0,
+      total: 4300,
+      currency: 'USD'
+    },
+    paymentMethod: 'Bank Wire Transfer',
+    paymentMethodDetails: 'Wire Ref: WT-95018-MN',
+    paymentProofUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=800&auto=format&fit=crop',
+    paymentProofFileName: 'bank_wire_repurchase_95018.jpg',
+    paymentProofUploadedAt: '2026-09-13T01:00:00Z',
+    paymentApprovedAt: '2026-09-13T01:05:00Z',
+    paymentStatus: 'Payment Confirmed',
+    ticketStatus: 'TICKET ISSUED',
+    transactionId: 'tx_stpaul_v2_95018',
+    qrPayload: 'EC-TKT-2026-95018-STPAUL-VIP-S102-R-A-S5S6',
+    entryInstructions: 'Present this digital pass or high-res PDF at Grand Casino Arena VIP Gate 1. Bring photo ID matching attendee name.',
+    inventoryVersion: 'v2',
+    isLegacy: false,
+    createdAt: '2026-09-13T01:00:00Z',
+    updatedAt: '2026-09-13T01:05:00Z'
+  },
+  {
     id: 'EC-2026-89421',
     customerId: 'user-demo-1',
     eventId: 'ec-detroit-2026',
