@@ -32,7 +32,8 @@ import {
   MessageSquare,
   Send,
   Mail,
-  User
+  User,
+  Ban
 } from 'lucide-react';
 import { 
   ConcertEvent, 
@@ -46,6 +47,8 @@ import {
   updateOrderStatus, 
   approveTicketOrderPayment,
   rejectTicketOrderPayment,
+  revokeTicketPass,
+  reinstateTicketPass,
   updateEventTierPrices,
   getPaymentMethods,
   savePaymentMethod,
@@ -91,10 +94,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [supportCategoryFilter, setSupportCategoryFilter] = useState<string>('all');
   const [isSendingAdminReply, setIsSendingAdminReply] = useState(false);
   
-  // Proof Viewer Modal
+  // Proof Viewer Modal & Order Action State
   const [viewingProofOrder, setViewingProofOrder] = useState<TicketOrder | null>(null);
   const [rejectReasonPrompt, setRejectReasonPrompt] = useState<string | null>(null);
   const [rejectReasonText, setRejectReasonText] = useState('Payment receipt could not be verified or transfer was not received.');
+  const [revokePrompt, setRevokePrompt] = useState<string | null>(null);
+  const [revokeReasonText, setRevokeReasonText] = useState('Administrative revocation / entry denied');
+  const [actionToast, setActionToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Payment Methods state
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodConfig[]>([]);
@@ -118,7 +124,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const confirmedTicketsCount = orders
     .filter(o => o.ticketStatus === 'TICKET ISSUED' || o.ticketStatus === 'BOOKING CONFIRMED')
     .reduce((sum, o) => sum + o.quantity, 0);
-  const pendingPaymentsCount = orders.filter(o => o.paymentStatus === 'Payment Pending' || o.ticketStatus === 'PAYMENT PENDING').length;
+
+  const pendingPaymentsCount = orders.filter(o => 
+    !isLegacy15thTicket(o) && 
+    (o.paymentStatus === 'Payment Pending' || o.ticketStatus === 'PAYMENT PENDING') &&
+    o.paymentStatus !== 'Payment Failed' &&
+    o.ticketStatus !== 'PAYMENT FAILED' &&
+    o.ticketStatus !== 'REVOKED'
+  ).length;
+
+  const approvedCount = orders.filter(o => 
+    !isLegacy15thTicket(o) &&
+    o.paymentStatus === 'Payment Confirmed' && 
+    o.ticketStatus === 'TICKET ISSUED'
+  ).length;
+
+  const declinedRevokedCount = orders.filter(o => 
+    !isLegacy15thTicket(o) && 
+    (o.paymentStatus === 'Payment Failed' || o.ticketStatus === 'PAYMENT FAILED' || o.ticketStatus === 'REVOKED' || o.ticketStatus === 'REFUNDED')
+  ).length;
+
   const legacy15thCount = orders.filter(o => isLegacy15thTicket(o)).length;
   const pendingMgrCount = meetGreets.filter(m => m.status === 'Request Received' || m.status === 'Under Review' || m.status === 'Awaiting Organizer Confirmation').length;
   const openSupportCount = supportTickets.filter(t => t.status === 'Open' || t.status === 'In Progress').length;
@@ -161,12 +186,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setStatusActionLoading(true);
     try {
       await approveTicketOrderPayment(orderId, 'admin@ericclapton.com', 'Approved by Tour Administrator');
+      setActionToast({ message: `Pass #${orderId} approved and issued successfully.`, type: 'success' });
       onDataChanged();
       if (viewingProofOrder?.id === orderId) {
         setViewingProofOrder(null);
       }
     } catch (err) {
       console.error(err);
+      setActionToast({ message: `Failed to approve order #${orderId}.`, type: 'error' });
     } finally {
       setStatusActionLoading(false);
     }
@@ -177,12 +204,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       await rejectTicketOrderPayment(orderId, rejectReasonText);
       setRejectReasonPrompt(null);
+      setActionToast({ message: `Payment for booking #${orderId} declined. Pass remains inactive.`, type: 'success' });
       onDataChanged();
       if (viewingProofOrder?.id === orderId) {
         setViewingProofOrder(null);
       }
     } catch (err) {
       console.error(err);
+      setActionToast({ message: `Failed to decline payment for #${orderId}.`, type: 'error' });
+    } finally {
+      setStatusActionLoading(false);
+    }
+  };
+
+  const handleRevokePass = async (orderId: string, reason?: string) => {
+    setStatusActionLoading(true);
+    try {
+      await revokeTicketPass(orderId, reason || revokeReasonText || 'Pass revoked by tour administrator');
+      setRevokePrompt(null);
+      setActionToast({ message: `Pass #${orderId} has been successfully REVOKED. Gate admission will be denied.`, type: 'success' });
+      onDataChanged();
+      if (viewingProofOrder?.id === orderId) {
+        setViewingProofOrder(null);
+      }
+    } catch (err) {
+      console.error(err);
+      setActionToast({ message: `Failed to revoke pass #${orderId}.`, type: 'error' });
+    } finally {
+      setStatusActionLoading(false);
+    }
+  };
+
+  const handleReinstatePass = async (orderId: string) => {
+    setStatusActionLoading(true);
+    try {
+      await reinstateTicketPass(orderId, 'admin@ericclapton.com');
+      setActionToast({ message: `Pass #${orderId} reinstated and reactivated for venue admission.`, type: 'success' });
+      onDataChanged();
+    } catch (err) {
+      console.error(err);
+      setActionToast({ message: `Failed to reinstate pass #${orderId}.`, type: 'error' });
     } finally {
       setStatusActionLoading(false);
     }
@@ -192,9 +253,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setStatusActionLoading(true);
     try {
       await updateOrderStatus(orderId, pStatus, tStatus);
+      setActionToast({ message: `Booking #${orderId} status set to ${tStatus}.`, type: 'success' });
       onDataChanged();
     } catch (err) {
       console.error(err);
+      setActionToast({ message: `Failed to update status for #${orderId}.`, type: 'error' });
     } finally {
       setStatusActionLoading(false);
     }
@@ -287,17 +350,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     if (!matchesSearch) return false;
 
+    const isLegacy = isLegacy15thTicket(o);
+    const isRevoked = !isLegacy && (o.ticketStatus === 'REVOKED' || o.ticketStatus === 'INVALID');
+    const isFailed = !isLegacy && !isRevoked && (o.paymentStatus === 'Payment Failed' || o.ticketStatus === 'PAYMENT FAILED' || o.ticketStatus === 'REFUNDED');
+    const isApproved = !isLegacy && !isRevoked && !isFailed && (o.paymentStatus === 'Payment Confirmed' && o.ticketStatus === 'TICKET ISSUED');
+    const isPending = !isLegacy && !isRevoked && !isFailed && !isApproved;
+
     if (orderFilter === 'pending') {
-      return o.paymentStatus === 'Payment Pending' || o.ticketStatus === 'PAYMENT PENDING';
+      return isPending;
     }
     if (orderFilter === 'approved') {
-      return (o.paymentStatus === 'Payment Confirmed' || o.ticketStatus === 'TICKET ISSUED') && !isLegacy15thTicket(o);
+      return isApproved;
     }
     if (orderFilter === 'declined') {
-      return o.paymentStatus === 'Payment Failed' || o.ticketStatus === 'REFUNDED';
+      return isFailed || isRevoked;
     }
     if (orderFilter === 'legacy') {
-      return isLegacy15thTicket(o);
+      return isLegacy;
     }
     return true;
   });
@@ -346,6 +415,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           )}
         </div>
       </div>
+
+      {/* Action Toast Feedback */}
+      {actionToast && (
+        <div className={`p-3.5 text-xs font-mono flex items-center justify-between border transition-all ${
+          actionToast.type === 'success' 
+            ? 'bg-emerald-950/90 border-emerald-500/60 text-emerald-200' 
+            : 'bg-rose-950/90 border-rose-500/60 text-rose-200'
+        }`}>
+          <div className="flex items-center gap-2">
+            {actionToast.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            )}
+            <span className="font-medium">{actionToast.message}</span>
+          </div>
+          <button 
+            onClick={() => setActionToast(null)} 
+            className="text-white/60 hover:text-white cursor-pointer font-bold px-2 py-0.5 text-sm"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Admin Navigation Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-white/10 pb-3">
@@ -524,8 +617,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {[
                 { id: 'all', label: `All (${orders.length})` },
                 { id: 'pending', label: `Pending Approval (${pendingPaymentsCount})` },
-                { id: 'approved', label: 'Approved' },
-                { id: 'declined', label: 'Declined/Refunded' },
+                { id: 'approved', label: `Approved (${approvedCount})` },
+                { id: 'declined', label: `Declined / Revoked (${declinedRevokedCount})` },
                 { id: 'legacy', label: `Legacy/Invalid 15th (${legacy15thCount})` },
               ].map((f) => (
                 <button
@@ -567,19 +660,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 ) : (
                   filteredOrders.map((o) => {
                     const isLegacy = isLegacy15thTicket(o);
-                    const isPending = !isLegacy && (o.paymentStatus === 'Payment Pending' || o.ticketStatus === 'PAYMENT PENDING');
-                    const isApproved = !isLegacy && (o.paymentStatus === 'Payment Confirmed' || o.ticketStatus === 'TICKET ISSUED');
-                    const isFailed = !isLegacy && (o.paymentStatus === 'Payment Failed' || o.ticketStatus === 'REFUNDED');
+                    const isRevoked = !isLegacy && (o.ticketStatus === 'REVOKED' || o.ticketStatus === 'INVALID');
+                    const isFailed = !isLegacy && !isRevoked && (o.paymentStatus === 'Payment Failed' || o.ticketStatus === 'PAYMENT FAILED' || o.ticketStatus === 'REFUNDED');
+                    const isApproved = !isLegacy && !isRevoked && !isFailed && (o.paymentStatus === 'Payment Confirmed' && o.ticketStatus === 'TICKET ISSUED');
+                    const isPending = !isLegacy && !isRevoked && !isFailed && !isApproved;
 
                     return (
-                      <tr key={o.id} className={`transition-colors ${isLegacy ? 'bg-rose-950/15 hover:bg-rose-950/25' : 'hover:bg-white/5'}`}>
+                      <tr key={o.id} className={`transition-colors ${isLegacy ? 'bg-rose-950/15 hover:bg-rose-950/25' : isRevoked ? 'bg-rose-950/15 hover:bg-rose-950/25' : 'hover:bg-white/5'}`}>
                         <td className="p-3.5 font-mono">
-                          <div className={isLegacy ? 'text-rose-400 font-bold' : 'text-[#D4AF37] font-bold'}>
+                          <div className={isLegacy || isRevoked ? 'text-rose-400 font-bold' : 'text-[#D4AF37] font-bold'}>
                             #{o.id}
                           </div>
                           {isLegacy && (
                             <span className="inline-block mt-0.5 px-1.5 py-0.2 text-[8.5px] font-mono uppercase bg-rose-950 text-rose-300 border border-rose-800/80">
                               Legacy Pass (v1)
+                            </span>
+                          )}
+                          {isRevoked && (
+                            <span className="inline-block mt-0.5 px-1.5 py-0.2 text-[8.5px] font-mono uppercase bg-rose-950 text-rose-300 border border-rose-800/80">
+                              Revoked
                             </span>
                           )}
                         </td>
@@ -624,25 +723,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 Gate Entry Denied • Repurchase Required
                               </div>
                             </div>
+                          ) : isRevoked ? (
+                            <div className="space-y-1">
+                              <span className="px-2 py-0.5 text-[10px] font-mono uppercase bg-rose-950 text-rose-300 border border-rose-700 flex items-center gap-1 w-fit font-bold">
+                                <Ban className="w-3 h-3 text-rose-400" />
+                                Pass Revoked
+                              </span>
+                              <div className="text-[9px] text-rose-400/80 font-mono">
+                                Gate Admission Denied
+                              </div>
+                            </div>
                           ) : isApproved ? (
-                            <span className="px-2 py-0.5 text-[10px] font-mono uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 w-fit">
+                            <span className="px-2 py-0.5 text-[10px] font-mono uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 w-fit font-bold">
                               <CheckCircle2 className="w-3 h-3" />
                               Approved
                             </span>
                           ) : isFailed ? (
-                            <span className="px-2 py-0.5 text-[10px] font-mono uppercase bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1 w-fit">
+                            <span className="px-2 py-0.5 text-[10px] font-mono uppercase bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1 w-fit font-bold">
                               <XCircle className="w-3 h-3" />
                               Declined
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 text-[10px] font-mono uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit animate-pulse">
+                            <span className="px-2 py-0.5 text-[10px] font-mono uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit animate-pulse font-bold">
                               <Clock className="w-3 h-3" />
                               Pending Approval
                             </span>
                           )}
-                          {!isLegacy && o.paymentApprovedAt && (
+                          {!isLegacy && o.paymentApprovedAt && isApproved && (
                             <div className="text-[9px] text-[#F5F5DC]/40 font-mono mt-0.5">
                               Approved {new Date(o.paymentApprovedAt).toLocaleDateString()}
+                            </div>
+                          )}
+                          {o.adminNotes && (
+                            <div className="text-[9px] text-[#F5F5DC]/50 font-mono mt-0.5 line-clamp-1 italic" title={o.adminNotes}>
+                              {o.adminNotes}
                             </div>
                           )}
                         </td>
@@ -670,14 +784,63 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               </button>
                             </>
                           ) : isApproved ? (
-                            <button
-                              disabled={statusActionLoading}
-                              onClick={() => handleUpdateOrderStatus(o.id, 'Payment Pending', 'PAYMENT PENDING')}
-                              className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-[#F5F5DC]/60 text-[10px] font-mono uppercase border border-white/10 transition-colors cursor-pointer"
-                              title="Re-open order to pending verification"
-                            >
-                              Revoke Pass
-                            </button>
+                            <>
+                              <button
+                                disabled={statusActionLoading}
+                                onClick={() => setRevokePrompt(o.id)}
+                                className="px-2.5 py-1.5 bg-rose-950/70 hover:bg-rose-900 text-rose-300 text-[10px] font-mono uppercase border border-rose-800 transition-colors cursor-pointer inline-flex items-center gap-1 font-bold"
+                                title="Revoke this active pass"
+                              >
+                                <Ban className="w-3 h-3" />
+                                Revoke Pass
+                              </button>
+                              <button
+                                disabled={statusActionLoading}
+                                onClick={() => handleUpdateOrderStatus(o.id, 'Payment Pending', 'PAYMENT PENDING')}
+                                className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-[#F5F5DC]/60 text-[10px] font-mono uppercase border border-white/10 transition-colors cursor-pointer"
+                                title="Reset status to pending review"
+                              >
+                                Reset Pending
+                              </button>
+                            </>
+                          ) : isRevoked ? (
+                            <>
+                              <button
+                                disabled={statusActionLoading}
+                                onClick={() => handleReinstatePass(o.id)}
+                                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-[10px] font-mono uppercase font-bold transition-colors cursor-pointer"
+                                title="Reinstate and reactivate this revoked pass"
+                              >
+                                Reinstate Pass
+                              </button>
+                              <button
+                                disabled={statusActionLoading}
+                                onClick={() => handleUpdateOrderStatus(o.id, 'Payment Pending', 'PAYMENT PENDING')}
+                                className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-[#F5F5DC]/60 text-[10px] font-mono uppercase border border-white/10 transition-colors cursor-pointer"
+                                title="Reset status to pending"
+                              >
+                                Reset Pending
+                              </button>
+                            </>
+                          ) : isFailed ? (
+                            <>
+                              <button
+                                disabled={statusActionLoading}
+                                onClick={() => handleApprovePayment(o.id)}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-mono uppercase font-bold transition-colors cursor-pointer"
+                                title="Approve payment proof and activate pass"
+                              >
+                                Re-Approve & Issue
+                              </button>
+                              <button
+                                disabled={statusActionLoading}
+                                onClick={() => handleUpdateOrderStatus(o.id, 'Payment Pending', 'PAYMENT PENDING')}
+                                className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-[#F5F5DC]/60 text-[10px] font-mono uppercase border border-white/10 transition-colors cursor-pointer"
+                                title="Reset status to pending"
+                              >
+                                Re-open to Pending
+                              </button>
+                            </>
                           ) : null}
                         </td>
                       </tr>
@@ -1709,22 +1872,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               >
                 Close Preview
               </button>
-              <button
-                type="button"
-                onClick={() => handleRejectPayment(viewingProofOrder.id)}
-                className="px-4 py-2 bg-rose-950/70 hover:bg-rose-900 text-rose-300 text-xs font-mono uppercase tracking-wider border border-rose-700 cursor-pointer"
-              >
-                Decline Payment
-              </button>
-              <button
-                type="button"
-                disabled={statusActionLoading}
-                onClick={() => handleApprovePayment(viewingProofOrder.id)}
-                className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Approve Payment & Activate Passes</span>
-              </button>
+              {viewingProofOrder.paymentStatus !== 'Payment Failed' && viewingProofOrder.ticketStatus !== 'PAYMENT FAILED' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const id = viewingProofOrder.id;
+                    setRejectReasonPrompt(id);
+                  }}
+                  className="px-4 py-2 bg-rose-950/70 hover:bg-rose-900 text-rose-300 text-xs font-mono uppercase tracking-wider border border-rose-700 cursor-pointer"
+                >
+                  Decline Payment
+                </button>
+              )}
+              {viewingProofOrder.ticketStatus === 'TICKET ISSUED' ? (
+                <button
+                  type="button"
+                  disabled={statusActionLoading}
+                  onClick={() => setRevokePrompt(viewingProofOrder.id)}
+                  className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <Ban className="w-4 h-4" />
+                  <span>Revoke Pass</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={statusActionLoading}
+                  onClick={() => handleApprovePayment(viewingProofOrder.id)}
+                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Approve Payment & Activate Passes</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1735,32 +1915,93 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="fixed inset-0 z-60 bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
           <div className="relative max-w-md w-full bg-[#121214] border border-rose-500/40 p-6 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
-              <h3 className="font-serif text-base font-bold text-rose-300">Decline Payment for #{rejectReasonPrompt}</h3>
+              <div className="flex items-center gap-2">
+                <XCircle className="w-4 h-4 text-rose-400" />
+                <h3 className="font-serif text-base font-bold text-rose-300">Decline Payment for #{rejectReasonPrompt}</h3>
+              </div>
               <button onClick={() => setRejectReasonPrompt(null)} className="text-[#F5F5DC]/50 hover:text-white font-mono cursor-pointer">✕</button>
             </div>
 
+            <p className="text-xs text-[#F5F5DC]/70 leading-relaxed">
+              Declining this payment will mark the booking as failed and withhold pass issuance. The attendee will see the decline reason upon checking their ticket.
+            </p>
+
             <div className="space-y-2">
-              <label className="block text-xs font-mono text-[#F5F5DC]/70">Reason for customer notification:</label>
+              <label className="block text-xs font-mono text-[#F5F5DC]/70">Reason for attendee notification:</label>
               <textarea
                 rows={3}
                 value={rejectReasonText}
                 onChange={(e) => setRejectReasonText(e.target.value)}
+                placeholder="e.g. Payment receipt could not be verified or transfer was not received."
                 className="w-full px-3 py-2 bg-[#0B0B0D] border border-white/10 text-xs text-[#F5F5DC] focus:outline-none focus:border-rose-500"
               />
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
               <button
+                type="button"
                 onClick={() => setRejectReasonPrompt(null)}
                 className="px-4 py-1.5 bg-[#1A1A1D] text-xs font-mono text-[#F5F5DC]/70 hover:text-white cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
+                disabled={statusActionLoading}
                 onClick={() => handleRejectPayment(rejectReasonPrompt)}
-                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs font-mono uppercase tracking-wider cursor-pointer"
+                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs font-mono uppercase tracking-wider cursor-pointer flex items-center gap-1.5"
               >
-                Confirm Decline
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Confirm Decline</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REVOKE PASS CONFIRMATION MODAL */}
+      {revokePrompt && (
+        <div className="fixed inset-0 z-60 bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="relative max-w-md w-full bg-[#121214] border border-rose-500/50 p-6 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <Ban className="w-4 h-4 text-rose-400" />
+                <h3 className="font-serif text-base font-bold text-rose-300">Revoke Concert Pass #{revokePrompt}</h3>
+              </div>
+              <button onClick={() => setRevokePrompt(null)} className="text-[#F5F5DC]/50 hover:text-white font-mono cursor-pointer">✕</button>
+            </div>
+
+            <div className="p-3 bg-rose-950/40 border border-rose-500/30 text-xs text-rose-200 leading-relaxed">
+              <strong>Warning:</strong> Revoking this pass will invalidate all gate barcodes and turnstiles for this booking. Venue entry will be refused at the gates.
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-[#F5F5DC]/70">Revocation Reason / Administrative Note:</label>
+              <textarea
+                rows={3}
+                value={revokeReasonText}
+                onChange={(e) => setRevokeReasonText(e.target.value)}
+                placeholder="e.g. Order cancelled, security revocation, or fraudulent transaction."
+                className="w-full px-3 py-2 bg-[#0B0B0D] border border-white/10 text-xs text-[#F5F5DC] focus:outline-none focus:border-rose-500"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setRevokePrompt(null)}
+                className="px-4 py-1.5 bg-[#1A1A1D] text-xs font-mono text-[#F5F5DC]/70 hover:text-white cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={statusActionLoading}
+                onClick={() => handleRevokePass(revokePrompt, revokeReasonText)}
+                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs font-mono uppercase tracking-wider cursor-pointer flex items-center gap-1.5"
+              >
+                <Ban className="w-3.5 h-3.5" />
+                <span>Confirm Revoke</span>
               </button>
             </div>
           </div>

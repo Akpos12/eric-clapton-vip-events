@@ -25,7 +25,8 @@ import {
   Check,
   XCircle,
   AlertTriangle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Ban
 } from 'lucide-react';
 import { TicketOrder, MeetGreetRequest } from '../types';
 import { getOrderById, getMeetGreetById, searchTickets, isLegacy15thTicket, validateTicketForScan } from '../lib/api';
@@ -192,7 +193,9 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
   };
 
   const isLegacy15th = ticketOrder ? isLegacy15thTicket(ticketOrder) : false;
-  const isOrderApproved = ticketOrder ? (ticketOrder.paymentStatus === 'Payment Confirmed' || ticketOrder.ticketStatus === 'TICKET ISSUED') : false;
+  const isOrderRevoked = ticketOrder ? (!isLegacy15th && (ticketOrder.ticketStatus === 'REVOKED' || ticketOrder.ticketStatus === 'INVALID')) : false;
+  const isOrderFailed = ticketOrder ? (!isLegacy15th && !isOrderRevoked && (ticketOrder.paymentStatus === 'Payment Failed' || ticketOrder.ticketStatus === 'PAYMENT FAILED' || ticketOrder.ticketStatus === 'REFUNDED')) : false;
+  const isOrderApproved = ticketOrder ? (!isLegacy15th && !isOrderRevoked && !isOrderFailed && (ticketOrder.paymentStatus === 'Payment Confirmed' || ticketOrder.ticketStatus === 'TICKET ISSUED')) : false;
 
   const getStatusBadge = (order: TicketOrder) => {
     if (isLegacy15thTicket(order) || order.ticketStatus === 'INVALID / LEGACY' || order.isLegacy) {
@@ -203,19 +206,27 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
         </span>
       );
     }
+    if (order.ticketStatus === 'REVOKED' || order.ticketStatus === 'INVALID') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-rose-950 text-rose-300 border border-rose-600 font-mono tracking-wider">
+          <Ban className="w-3.5 h-3.5 text-rose-400" />
+          PASS REVOKED
+        </span>
+      );
+    }
+    if (order.paymentStatus === 'Payment Failed' || order.ticketStatus === 'PAYMENT FAILED' || order.ticketStatus === 'REFUNDED') {
+      return (
+        <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30 font-mono">
+          <AlertCircle className="w-3.5 h-3.5" />
+          PAYMENT DECLINED
+        </span>
+      );
+    }
     if (order.paymentStatus === 'Payment Confirmed' || order.ticketStatus === 'TICKET ISSUED') {
       return (
         <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">
           <CheckCircle2 className="w-3.5 h-3.5" />
           TICKET ISSUED & CONFIRMED
-        </span>
-      );
-    }
-    if (order.paymentStatus === 'Payment Failed') {
-      return (
-        <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30 font-mono">
-          <AlertCircle className="w-3.5 h-3.5" />
-          PAYMENT DECLINED
         </span>
       );
     }
@@ -402,6 +413,10 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                     {matchedOrders.map((ord) => {
                       const isSel = ticketOrder?.id === ord.id;
                       const isLeg = isLegacy15thTicket(ord);
+                      const isRev = !isLeg && (ord.ticketStatus === 'REVOKED' || ord.ticketStatus === 'INVALID');
+                      const isDec = !isLeg && !isRev && (ord.paymentStatus === 'Payment Failed' || ord.ticketStatus === 'PAYMENT FAILED' || ord.ticketStatus === 'REFUNDED');
+                      const isApp = !isLeg && !isRev && !isDec && (ord.paymentStatus === 'Payment Confirmed' || ord.ticketStatus === 'TICKET ISSUED');
+
                       return (
                         <button
                           key={ord.id}
@@ -409,26 +424,41 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                           onClick={() => selectOrder(ord)}
                           className={`p-3 text-left transition-all border cursor-pointer relative ${
                             isSel
-                              ? isLeg
+                              ? isLeg || isRev || isDec
                                 ? 'bg-rose-950/70 border-rose-500 ring-1 ring-rose-500'
                                 : 'bg-[#1A1A1D] border-[#D4AF37] ring-1 ring-[#D4AF37]'
-                              : isLeg
+                              : isLeg || isRev || isDec
                               ? 'bg-[#121214] border-rose-900/40 opacity-70 hover:opacity-100 hover:border-rose-700'
                               : 'bg-[#121214] border-white/10 opacity-80 hover:opacity-100 hover:border-[#D4AF37]/50'
                           }`}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className={`font-mono text-xs font-bold ${isLeg ? 'text-rose-400' : 'text-[#D4AF37]'}`}>
+                            <span className={`font-mono text-xs font-bold ${isLeg || isRev || isDec ? 'text-rose-400' : 'text-[#D4AF37]'}`}>
                               #{ord.id}
                             </span>
                             {isLeg ? (
                               <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase bg-rose-950 text-rose-300 border border-rose-800 font-bold">
                                 Legacy (15th) — Void
                               </span>
-                            ) : (
+                            ) : isRev ? (
+                              <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase bg-rose-950 text-rose-300 border border-rose-800 font-bold flex items-center gap-1">
+                                <Ban className="w-3 h-3 text-rose-400" />
+                                Revoked
+                              </span>
+                            ) : isDec ? (
+                              <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase bg-rose-950 text-rose-300 border border-rose-800 font-bold flex items-center gap-1">
+                                <XCircle className="w-3 h-3 text-rose-400" />
+                                Declined
+                              </span>
+                            ) : isApp ? (
                               <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase bg-emerald-950 text-emerald-300 border border-emerald-700 font-bold flex items-center gap-1">
                                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                                 Valid Active Pass
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase bg-amber-950/70 text-amber-300 border border-amber-700 font-bold flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-amber-400" />
+                                Pending
                               </span>
                             )}
                           </div>
@@ -440,7 +470,7 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                             <span>{new Date(ord.createdAt).toLocaleDateString()}</span>
                           </div>
                           {isSel && (
-                            <div className={`mt-2 text-[10px] font-mono flex items-center gap-1 ${isLeg ? 'text-rose-400 font-bold' : 'text-[#D4AF37] font-bold'}`}>
+                            <div className={`mt-2 text-[10px] font-mono flex items-center gap-1 ${isLeg || isRev || isDec ? 'text-rose-400 font-bold' : 'text-[#D4AF37] font-bold'}`}>
                               <span>▶ Selected for Download</span>
                             </div>
                           )}
@@ -486,6 +516,42 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                       <span className="text-emerald-400 font-bold">VIP: $2,000 (2 Left)</span>
                       <span>•</span>
                       <span className="text-rose-400 font-medium line-through">Standard: $1,000 (SOLD OUT)</span>
+                    </div>
+                  </div>
+                </div>
+              ) : isOrderRevoked ? (
+                <div className="p-5 bg-rose-950/95 border-2 border-rose-500 space-y-2 shadow-2xl">
+                  <div className="flex items-start gap-3.5">
+                    <Ban className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <div className="font-mono text-[11px] font-bold text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <Ban className="w-4 h-4" />
+                        VENUE ADMISSION DENIED • PASS REVOKED
+                      </div>
+                      <h3 className="font-mono text-sm sm:text-base font-bold text-white tracking-wide leading-snug">
+                        PASS REVOKED — Gate turnstiles and scanners will deny entry for this booking.
+                      </h3>
+                      <p className="text-xs text-rose-200/90 leading-relaxed font-sans">
+                        {ticketOrder.adminNotes || 'This concert pass has been cancelled or revoked by tour administration. Turnstile barcodes are inactive.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : isOrderFailed ? (
+                <div className="p-5 bg-rose-950/95 border-2 border-rose-500 space-y-2 shadow-2xl">
+                  <div className="flex items-start gap-3.5">
+                    <XCircle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <div className="font-mono text-[11px] font-bold text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <XCircle className="w-4 h-4" />
+                        PAYMENT DECLINED • PASS INACTIVE
+                      </div>
+                      <h3 className="font-mono text-sm sm:text-base font-bold text-white tracking-wide leading-snug">
+                        Payment verification was declined or could not be verified.
+                      </h3>
+                      <p className="text-xs text-rose-200/90 leading-relaxed font-sans">
+                        {ticketOrder.adminNotes || 'Payment receipt could not be verified or transfer was not received by tour administration.'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -597,10 +663,10 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                         <img
                           src={qrCodeUrl}
                           alt="Eric Clapton Concert Ticket QR"
-                          className={`w-28 h-28 object-contain mx-auto ${isLegacy15th ? 'opacity-20 grayscale' : ''}`}
+                          className={`w-28 h-28 object-contain mx-auto ${isLegacy15th || isOrderRevoked || isOrderFailed ? 'opacity-20 grayscale' : ''}`}
                           referrerPolicy="no-referrer"
                         />
-                        {isLegacy15th && (
+                        {isLegacy15th ? (
                           <div className="absolute inset-0 flex flex-col items-center justify-center p-2 bg-rose-950/90 text-center">
                             <XCircle className="w-6 h-6 text-rose-400 mb-1" />
                             <span className="text-[10px] font-mono text-white font-bold uppercase tracking-wider leading-tight">
@@ -610,19 +676,53 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                               NOT VALID FOR 15TH
                             </span>
                           </div>
-                        )}
+                        ) : isOrderRevoked ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center p-2 bg-rose-950/90 text-center">
+                            <Ban className="w-6 h-6 text-rose-400 mb-1" />
+                            <span className="text-[10px] font-mono text-white font-bold uppercase tracking-wider leading-tight">
+                              PASS REVOKED
+                            </span>
+                            <span className="text-[8px] font-mono text-rose-300 uppercase mt-0.5">
+                              ENTRY REFUSED
+                            </span>
+                          </div>
+                        ) : isOrderFailed ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center p-2 bg-rose-950/90 text-center">
+                            <XCircle className="w-6 h-6 text-rose-400 mb-1" />
+                            <span className="text-[10px] font-mono text-white font-bold uppercase tracking-wider leading-tight">
+                              PAYMENT DECLINED
+                            </span>
+                            <span className="text-[8px] font-mono text-rose-300 uppercase mt-0.5">
+                              PASS INACTIVE
+                            </span>
+                          </div>
+                        ) : null}
                         <span className={`text-[9px] font-mono font-bold uppercase tracking-wider block mt-1 ${
-                          isLegacy15th ? 'text-rose-600' : 'text-black'
+                          isLegacy15th || isOrderRevoked || isOrderFailed ? 'text-rose-600' : 'text-black'
                         }`}>
-                          {isLegacy15th ? 'GATE ACCESS DENIED' : 'ERIC CLAPTON GATE PASS'}
+                          {isLegacy15th ? 'GATE ACCESS DENIED' : isOrderRevoked ? 'REVOKED GATE PASS' : isOrderFailed ? 'UNVERIFIED PASS' : 'ERIC CLAPTON GATE PASS'}
                         </span>
-                        <span className="text-[8px] font-mono text-zinc-600 block mt-0.5 max-w-[130px] leading-tight">
-                          {isLegacy15th 
-                            ? 'Do not accept at venue entrance' 
-                            : isOrderApproved 
-                            ? 'Live gate scanner pass' 
-                            : 'Verified reservation barcode'}
-                        </span>
+                        {isLegacy15th ? (
+                          <span className="text-[8px] font-mono text-rose-600 font-bold block mt-0.5 max-w-[130px] leading-tight">
+                            Do not accept at venue entrance
+                          </span>
+                        ) : isOrderRevoked ? (
+                          <span className="text-[8px] font-mono text-rose-600 font-bold block mt-0.5 max-w-[130px] leading-tight">
+                            REVOKED: Turnstile denied
+                          </span>
+                        ) : isOrderFailed ? (
+                          <span className="text-[8px] font-mono text-rose-600 font-bold block mt-0.5 max-w-[130px] leading-tight">
+                            DECLINED: Pass inactive
+                          </span>
+                        ) : isOrderApproved ? (
+                          <span className="text-[8px] font-mono text-emerald-700 font-bold block mt-0.5 max-w-[130px] leading-tight">
+                            Live gate scanner pass
+                          </span>
+                        ) : (
+                          <span className="text-[8px] font-mono text-zinc-600 block mt-0.5 max-w-[130px] leading-tight">
+                            Verified reservation barcode
+                          </span>
+                        )}
                       </div>
                     ) : (
                       <div className="w-full bg-[#1A1A1D] border border-amber-500/30 p-4 space-y-2">

@@ -57,7 +57,14 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs = 2000): Promise<T>
 }
 
 // Seed initial database state if empty or obsolete
-export async function seedInitialDataIfNeeded() {
+let _initialSeedExecuted = false;
+
+export async function seedInitialDataIfNeeded(force = false) {
+  if (_initialSeedExecuted && !force) {
+    return;
+  }
+  _initialSeedExecuted = true;
+
   // Clean up legacy saved fan email if it was the demo fallback
   try {
     const savedEmail = localStorage.getItem('ec_vip_fan_email');
@@ -71,26 +78,11 @@ export async function seedInitialDataIfNeeded() {
   // Always ensure LocalStorage cache is populated immediately for zero latency
   if (!localStorage.getItem(LS_EVENTS_KEY)) {
     localStorage.setItem(LS_EVENTS_KEY, JSON.stringify(INITIAL_EVENTS));
-  } else {
-    // Update cached events with new schedule
-    localStorage.setItem(LS_EVENTS_KEY, JSON.stringify(INITIAL_EVENTS));
   }
+  
   const rawOrders = localStorage.getItem(LS_ORDERS_KEY);
   if (!rawOrders) {
     localStorage.setItem(LS_ORDERS_KEY, JSON.stringify(SAMPLE_ORDERS));
-  } else {
-    try {
-      const parsed: TicketOrder[] = JSON.parse(rawOrders);
-      if (!parsed.some(o => o.id === 'EC-2026-95018')) {
-        const sampleV2 = SAMPLE_ORDERS.find(o => o.id === 'EC-2026-95018');
-        if (sampleV2) {
-          parsed.unshift(sampleV2);
-          localStorage.setItem(LS_ORDERS_KEY, JSON.stringify(parsed));
-        }
-      }
-    } catch {
-      localStorage.setItem(LS_ORDERS_KEY, JSON.stringify(SAMPLE_ORDERS));
-    }
   }
   if (!localStorage.getItem(LS_MGR_KEY)) {
     localStorage.setItem(LS_MGR_KEY, JSON.stringify(SAMPLE_MEET_GREETS));
@@ -153,9 +145,13 @@ export async function seedInitialDataIfNeeded() {
       // ignore
     }
 
-    // Seed sample orders ensuring pending verification status
-    for (const ord of SAMPLE_ORDERS) {
-      await setDoc(doc(db, 'ticket_orders', ord.id), ord, { merge: true });
+    // Seed sample orders ONLY if Firestore ticket_orders collection is completely empty
+    const ordersCol = collection(db, 'ticket_orders');
+    const ordersSnap = await withTimeout(getDocs(ordersCol), 2000);
+    if (ordersSnap.empty) {
+      for (const ord of SAMPLE_ORDERS) {
+        await setDoc(doc(db, 'ticket_orders', ord.id), ord);
+      }
     }
 
     if (snap.empty) {
@@ -316,10 +312,23 @@ export function validateTicketForScan(order: TicketOrder): TicketScanValidationR
   }
 
   // Standard evaluation for other concert dates and valid new 15th passes
+  // Handle explicitly revoked tickets
+  if (order.ticketStatus === 'REVOKED' || order.ticketStatus === 'INVALID') {
+    return {
+      isValid: false,
+      isLegacy15th: false,
+      ticketStatus: 'REVOKED',
+      displayMessage: 'TICKET REVOKED — This concert pass has been revoked by tour administration. Venue admission cannot be granted.',
+      canCheckIn: false,
+      order
+    };
+  }
+
   const isApproved = order.paymentStatus === 'Payment Confirmed' || order.ticketStatus === 'TICKET ISSUED';
   const isDeclinedOrCancelled = 
     order.ticketStatus === 'REFUNDED' || 
     order.ticketStatus === 'EVENT CANCELLED' || 
+    order.ticketStatus === 'PAYMENT FAILED' ||
     order.paymentStatus === 'Payment Failed';
 
   if (isDeclinedOrCancelled) {
@@ -327,7 +336,7 @@ export function validateTicketForScan(order: TicketOrder): TicketScanValidationR
       isValid: false,
       isLegacy15th: false,
       ticketStatus: order.ticketStatus,
-      displayMessage: `Ticket status is ${order.ticketStatus}. Venue admission cannot be granted.`,
+      displayMessage: `Ticket payment declined or cancelled. Venue admission cannot be granted.`,
       canCheckIn: false,
       order
     };
@@ -561,26 +570,62 @@ export async function updateOrderStatus(
     updateData.paymentApprovedAt = new Date().toISOString();
   }
 
+  // 1. Immediately update LocalStorage cache for immediate UI reactivity
   try {
-    await withTimeout(updateDoc(doc(db, 'ticket_orders', orderId), updateData), 2000);
-  } catch {
-    // fallback
+    const raw = localStorage.getItem(LS_ORDERS_KEY);
+    if (raw) {
+      const orders: TicketOrder[] = JSON.parse(raw);
+      const idx = orders.findIndex(o => o.id === orderId);
+      if (idx >= 0) {
+        orders[idx] = { ...orders[idx], ...updateData } as TicketOrder;
+        localStorage.setItem(LS_ORDERS_KEY, JSON.stringify(orders));
+      }
+    }
+  } catch (err) {
+    console.error('Failed updating local orders storage:', err);
   }
-  const orders = await getTicketOrders();
-  const idx = orders.findIndex(o => o.id === orderId);
-  if (idx >= 0) {
-    orders[idx] = { ...orders[idx], ...updateData };
-    localStorage.setItem(LS_ORDERS_KEY, JSON.stringify(orders));
+
+  // 2. Persist to Firestore with setDoc merge: true
+  try {
+    await withTimeout(setDoc(doc(db, 'ticket_orders', orderId), updateData, { merge: true }), 2500);
+  } catch (err) {
+    console.warn('Firestore setDoc warning (fallback to local):', err);
   }
 }
 
 export async function approveTicketOrderPayment(orderId: string, adminEmail: string, notes?: string): Promise<TicketOrder | null> {
-  await updateOrderStatus(orderId, 'Payment Confirmed', 'TICKET ISSUED', notes, adminEmail);
+  await updateOrderStatus(orderId, 'Payment Confirmed', 'TICKET ISSUED', notes || 'Payment verified by administrator', adminEmail);
   return getOrderById(orderId);
 }
 
 export async function rejectTicketOrderPayment(orderId: string, reason: string): Promise<TicketOrder | null> {
-  await updateOrderStatus(orderId, 'Payment Failed', 'PAYMENT PENDING', `Payment rejected: ${reason}`);
+  await updateOrderStatus(
+    orderId, 
+    'Payment Failed', 
+    'PAYMENT FAILED', 
+    reason ? `Payment declined: ${reason}` : 'Payment declined by tour administrator'
+  );
+  return getOrderById(orderId);
+}
+
+export async function revokeTicketPass(orderId: string, reason?: string): Promise<TicketOrder | null> {
+  await updateOrderStatus(
+    orderId, 
+    'Refunded', 
+    'REVOKED', 
+    reason || 'Pass revoked by tour administrator'
+  );
+  return getOrderById(orderId);
+}
+
+export async function reinstateTicketPass(orderId: string, adminEmail = 'admin@ericclapton.com'): Promise<TicketOrder | null> {
+  await updateOrderStatus(
+    orderId, 
+    'Payment Confirmed', 
+    'TICKET ISSUED', 
+    'Pass reinstated and activated by tour administrator', 
+    adminEmail
+  );
   return getOrderById(orderId);
 }
 

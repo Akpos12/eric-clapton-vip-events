@@ -120,7 +120,6 @@ export default function App() {
   // Initial Data Fetch
   const refreshAllData = async () => {
     try {
-      await seedInitialDataIfNeeded();
       const [evs, ords, mgrs, vips, gws, stkts] = await Promise.all([
         getConcertEvents(),
         getTicketOrders(),
@@ -143,7 +142,11 @@ export default function App() {
   };
 
   useEffect(() => {
-    refreshAllData();
+    const initApp = async () => {
+      await seedInitialDataIfNeeded();
+      await refreshAllData();
+    };
+    initApp();
   }, []);
 
   // Action Handlers

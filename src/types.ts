@@ -74,7 +74,9 @@ export type TicketStatus =
   | 'EVENT CANCELLED'
   | 'REFUNDED'
   | 'INVALID / LEGACY'
-  | 'INVALID';
+  | 'INVALID'
+  | 'REVOKED'
+  | 'PAYMENT FAILED';
 
 export interface TicketAttendee {
   fullName: string;
