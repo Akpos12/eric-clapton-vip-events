@@ -32,7 +32,7 @@ import {
 } from '../data/mockData';
 
 // Local storage fallback keys for instant responsiveness if offline or initial setup
-const LS_EVENTS_KEY = 'ec_vip_events_store_v11';
+const LS_EVENTS_KEY = 'ec_vip_events_store_v12';
 const LS_ORDERS_KEY = 'ec_vip_orders_store_v9';
 const LS_MGR_KEY = 'ec_vip_mgr_store_v9';
 const LS_SUPPORT_KEY = 'ec_vip_support_store_v9';
@@ -59,6 +59,19 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs = 2000): Promise<T>
 // Seed initial database state if empty or obsolete
 let _initialSeedExecuted = false;
 
+const OBSOLETE_OR_PASSED_EVENT_IDS = [
+  'ec-stpaul-2026',
+  'ec-detroit-2026',
+  'ec-cincinnati-2026',
+  'ec-chicago-2026',
+  'ec-milwaukee-2026',
+  'ec-london-rah-2026',
+  'ec-msg-nyc-2026',
+  'ec-budokan-tokyo-2026',
+  'ec-olympia-paris-2026',
+  'ec-redrocks-colorado-2027'
+];
+
 export async function seedInitialDataIfNeeded(force = false) {
   if (_initialSeedExecuted && !force) {
     return;
@@ -75,10 +88,8 @@ export async function seedInitialDataIfNeeded(force = false) {
     // ignore
   }
 
-  // Always ensure LocalStorage cache is populated immediately for zero latency
-  if (!localStorage.getItem(LS_EVENTS_KEY)) {
-    localStorage.setItem(LS_EVENTS_KEY, JSON.stringify(INITIAL_EVENTS));
-  }
+  // Always ensure LocalStorage cache is populated immediately for zero latency with upcoming events
+  localStorage.setItem(LS_EVENTS_KEY, JSON.stringify(INITIAL_EVENTS));
   
   const rawOrders = localStorage.getItem(LS_ORDERS_KEY);
   if (!rawOrders) {
@@ -105,15 +116,8 @@ export async function seedInitialDataIfNeeded(force = false) {
     const eventsCol = collection(db, 'events');
     const snap = await withTimeout(getDocs(eventsCol), 2500);
     
-    // Obsolete event IDs cleanup if they exist from prior seed
-    const obsoleteEventIds = [
-      'ec-london-rah-2026',
-      'ec-msg-nyc-2026',
-      'ec-budokan-tokyo-2026',
-      'ec-olympia-paris-2026',
-      'ec-redrocks-colorado-2027'
-    ];
-    for (const oldId of obsoleteEventIds) {
+    // Obsolete and passed event IDs cleanup from Firestore
+    for (const oldId of OBSOLETE_OR_PASSED_EVENT_IDS) {
       try {
         await deleteDoc(doc(db, 'events', oldId));
       } catch {
@@ -181,14 +185,23 @@ export async function seedInitialDataIfNeeded(force = false) {
 // EVENTS SERVICE
 // -------------------------------------------------------------
 export async function getConcertEvents(): Promise<ConcertEvent[]> {
+  const isEventCurrent = (event: ConcertEvent) => {
+    if (!event || !event.eventDate) return false;
+    if (OBSOLETE_OR_PASSED_EVENT_IDS.includes(event.id)) return false;
+    // Current date threshold: September 17, 2026 (or today's date)
+    const todayStr = new Date().toISOString().split('T')[0];
+    const thresholdDate = todayStr < '2026-09-17' ? '2026-09-17' : todayStr;
+    return event.eventDate >= thresholdDate;
+  };
+
   try {
     const snap = await withTimeout(getDocs(collection(db, 'events')), 2000);
     if (!snap.empty) {
       let docs = snap.docs.map(d => d.data() as ConcertEvent);
-      // Filter out obsolete events if any remained
-      docs = docs.filter(d => !['ec-london-rah-2026', 'ec-msg-nyc-2026', 'ec-budokan-tokyo-2026', 'ec-olympia-paris-2026', 'ec-redrocks-colorado-2027'].includes(d.id));
+      // Filter out obsolete and passed events
+      docs = docs.filter(isEventCurrent);
       
-      // Ensure all standard initial events exist (e.g. Seattle)
+      // Ensure all standard initial upcoming events exist (e.g. Seattle, Kansas City, Austin)
       for (const initEv of INITIAL_EVENTS) {
         if (!docs.some(d => d.id === initEv.id)) {
           docs.push(initEv);
@@ -208,9 +221,12 @@ export async function getConcertEvents(): Promise<ConcertEvent[]> {
   } catch {
     // Instant fallback to LocalStorage
   }
+
   const raw = localStorage.getItem(LS_EVENTS_KEY);
   let list: ConcertEvent[] = raw ? JSON.parse(raw) : INITIAL_EVENTS;
-  // Ensure Seattle is present in local cache if older cache existed
+  list = list.filter(isEventCurrent);
+  
+  // Ensure all active upcoming initial events are present in local cache
   for (const initEv of INITIAL_EVENTS) {
     if (!list.some(d => d.id === initEv.id)) {
       list.push(initEv);
