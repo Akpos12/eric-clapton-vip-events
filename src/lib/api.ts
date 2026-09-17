@@ -32,7 +32,7 @@ import {
 } from '../data/mockData';
 
 // Local storage fallback keys for instant responsiveness if offline or initial setup
-const LS_EVENTS_KEY = 'ec_vip_events_store_v10';
+const LS_EVENTS_KEY = 'ec_vip_events_store_v11';
 const LS_ORDERS_KEY = 'ec_vip_orders_store_v9';
 const LS_MGR_KEY = 'ec_vip_mgr_store_v9';
 const LS_SUPPORT_KEY = 'ec_vip_support_store_v9';
@@ -184,18 +184,39 @@ export async function getConcertEvents(): Promise<ConcertEvent[]> {
   try {
     const snap = await withTimeout(getDocs(collection(db, 'events')), 2000);
     if (!snap.empty) {
-      const docs = snap.docs.map(d => d.data() as ConcertEvent);
+      let docs = snap.docs.map(d => d.data() as ConcertEvent);
       // Filter out obsolete events if any remained
-      const valid = docs.filter(d => !['ec-london-rah-2026', 'ec-msg-nyc-2026', 'ec-budokan-tokyo-2026', 'ec-olympia-paris-2026', 'ec-redrocks-colorado-2027'].includes(d.id));
-      if (valid.length > 0) {
-        return valid.sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+      docs = docs.filter(d => !['ec-london-rah-2026', 'ec-msg-nyc-2026', 'ec-budokan-tokyo-2026', 'ec-olympia-paris-2026', 'ec-redrocks-colorado-2027'].includes(d.id));
+      
+      // Ensure all standard initial events exist (e.g. Seattle)
+      for (const initEv of INITIAL_EVENTS) {
+        if (!docs.some(d => d.id === initEv.id)) {
+          docs.push(initEv);
+          try {
+            setDoc(doc(db, 'events', initEv.id), initEv);
+          } catch {
+            // ignore
+          }
+        }
+      }
+
+      if (docs.length > 0) {
+        localStorage.setItem(LS_EVENTS_KEY, JSON.stringify(docs));
+        return docs.sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
       }
     }
   } catch {
     // Instant fallback to LocalStorage
   }
   const raw = localStorage.getItem(LS_EVENTS_KEY);
-  const list: ConcertEvent[] = raw ? JSON.parse(raw) : INITIAL_EVENTS;
+  let list: ConcertEvent[] = raw ? JSON.parse(raw) : INITIAL_EVENTS;
+  // Ensure Seattle is present in local cache if older cache existed
+  for (const initEv of INITIAL_EVENTS) {
+    if (!list.some(d => d.id === initEv.id)) {
+      list.push(initEv);
+    }
+  }
+  localStorage.setItem(LS_EVENTS_KEY, JSON.stringify(list));
   return list.sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
 }
 

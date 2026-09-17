@@ -56,6 +56,84 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
     ]
   },
   {
+    id: 'ec-seattle-2026',
+    eventName: 'Eric Clapton Live at Climate Pledge Arena',
+    artist: 'Eric Clapton',
+    tourName: 'North American Tour 2026',
+    venue: 'Climate Pledge Arena',
+    city: 'Seattle, Washington',
+    country: 'United States',
+    eventDate: '2026-09-18',
+    doorsOpen: '18:00',
+    concertTime: '19:30',
+    startingPrice: 1500,
+    vipAvailability: true,
+    meetAndGreetAvailability: true,
+    status: 'upcoming',
+    heroImage: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=1200&auto=format&fit=crop',
+    description: 'Eric Clapton commands Climate Pledge Arena in Seattle on Friday, September 18, 2026 at 7:30 PM, performing classic blues anthems, iconic electric masterworks, and intimate acoustic sets with special guest Jimmie Vaughan.',
+    specialGuests: 'Jimmie Vaughan',
+    featured: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    ticketCategories: [
+      {
+        id: 'sea-tier-vip',
+        name: 'VIP',
+        price: 3000,
+        description: 'The Ultimate Ultra-VIP Backstage Experience: 1-on-1 meeting with Eric Clapton, Front Row Center Seating, soundcheck access, and luxury hospitality.',
+        benefits: [
+          'Private 1-on-1 Personal Meeting & Conversation with Eric Clapton Backstage',
+          'Professional Backstage Photograph with Eric Clapton',
+          'Front Row / Premium Ultra-VIP Pit Reserved Center Seating',
+          'Exclusive Pre-Show Backstage Soundcheck & Rehearsal Access',
+          'Personalized Hand-Signed Eric Clapton Tour Fender Stratocaster Pickguard & Autographed Lithograph',
+          'Ultra-VIP Luxury Hospitality Lounge with Gourmet Dining & Open Bar',
+          'Fast-Track Red Carpet Arena Entrance with Dedicated VIP Host Escort',
+          'Commemorative 24K Gold-Foil VIP Tour Pass, Tour Jacket & Custom VIP Merchandise Pack',
+          'Dedicated On-Site VIP Concierge & Reserved Priority Parking Pass'
+        ],
+        inventory: 40,
+        available: 12,
+        badge: '1-on-1 Meet & Greet',
+        sectionInfo: 'Ultra VIP Front Row Center & Backstage'
+      },
+      {
+        id: 'sea-tier-std',
+        name: 'Standard',
+        price: 2000,
+        description: 'Prime Lower Bowl reserved arena seating with VIP fast-track entry and commemorative tour pack.',
+        benefits: [
+          'Reserved Prime Lower Bowl Arena Seating (Rows 1-10)',
+          'VIP Dedicated Arena Fast-Track Entrance',
+          'Commemorative 2026 Tour Laminate & Lanyard',
+          'Official Eric Clapton Collector Tour Program Book',
+          'Complimentary Welcome Drink Voucher'
+        ],
+        inventory: 150,
+        available: 48,
+        badge: 'Prime Seating',
+        sectionInfo: 'Lower Bowl Sections 101-108'
+      },
+      {
+        id: 'sea-tier-reg',
+        name: 'Regular',
+        price: 1500,
+        description: 'Standard reserved seating with full arena acoustics and complete concert experience.',
+        benefits: [
+          'Reserved Arena Bowl Seating',
+          'Standard Arena Gate Entry',
+          'Official Digital Tour Guide & Collector E-Ticket',
+          'Full Access to Official Tour Merchandise Concourse'
+        ],
+        inventory: 250,
+        available: 95,
+        badge: 'Available',
+        sectionInfo: 'Main Concourse Reserved Seating'
+      }
+    ]
+  },
+  {
     id: 'ec-detroit-2026',
     eventName: 'Eric Clapton Concert',
     artist: 'Eric Clapton',

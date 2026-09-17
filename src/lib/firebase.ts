@@ -1,7 +1,13 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeFirestore, getFirestore, Firestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, Firestore, setLogLevel } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import config from '../../firebase-applet-config.json';
+
+try {
+  setLogLevel('error');
+} catch {
+  // ignore
+}
 
 const app = getApps().length > 0 ? getApp() : initializeApp({
   apiKey: config.apiKey,
