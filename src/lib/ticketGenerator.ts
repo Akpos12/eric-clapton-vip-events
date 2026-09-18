@@ -3,6 +3,7 @@ import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import html2canvasPro from 'html2canvas-pro';
 import { TicketOrder } from '../types';
+import { formatEventDate } from './dateUtils';
 
 /**
  * Build a scan-ready QR payload with the official Eric Clapton concert ticket URL
@@ -203,7 +204,8 @@ export async function generateDirectVectorTicketPDF(order: TicketOrder): Promise
   pdf.setTextColor(245, 245, 220);
   pdf.setFontSize(10);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(`${order.eventSnapshot?.eventDate || 'Tour Date'} • Doors: ${order.eventSnapshot?.doorsOpen || '6:30 PM'} • Show: ${order.eventSnapshot?.concertTime || '8:00 PM'}`, 25, 72);
+  const dateText = order.eventSnapshot?.eventDate ? formatEventDate(order.eventSnapshot.eventDate, 'full') : 'Tour Date';
+  pdf.text(`${dateText} • Doors: ${order.eventSnapshot?.doorsOpen || '6:30 PM'} • Show: ${order.eventSnapshot?.concertTime || '8:00 PM'}`, 25, 72);
 
   pdf.setTextColor(180, 160, 100);
   pdf.setFontSize(8);

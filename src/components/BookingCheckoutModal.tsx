@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ConcertEvent, TicketTierConfig, TicketOrder, TicketAttendee, PricingBreakdown, PaymentMethodConfig } from '../types';
+import { formatEventDate } from '../lib/dateUtils';
 import { createTicketOrder, getPaymentMethods } from '../lib/api';
 import { generateTicketQRCode, downloadTicketPDF, downloadTicketPNG } from '../lib/ticketGenerator';
 
@@ -372,7 +373,7 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
                 <div className="space-y-1">
                   <div className="text-[10px] font-mono text-[#D4AF37] uppercase tracking-wider">CONCERT DATE & VENUE</div>
                   <div className="font-serif font-bold text-sm text-[#F5F5DC]">{event.venue}, {event.city}</div>
-                  <div className="text-[#F5F5DC]/60 font-mono">Date: {event.eventDate} | Doors {event.doorsOpen} | Show {event.concertTime}</div>
+                  <div className="text-[#F5F5DC]/80 font-mono text-xs">Date: <span className="text-[#D4AF37] font-bold">{formatEventDate(event.eventDate, 'full')}</span> | Doors {event.doorsOpen} | Show {event.concertTime}</div>
                 </div>
                 {event.specialGuests && (
                   <div className="text-right text-[11px] font-mono text-[#D4AF37]/90 bg-[#121214] px-3 py-1.5 border border-[#D4AF37]/20">
@@ -968,7 +969,7 @@ export const BookingCheckoutModal: React.FC<BookingCheckoutModalProps> = ({
                   </h4>
                   <div className="text-xs text-[#F5F5DC]/70 flex flex-wrap gap-4 pt-1 font-mono">
                     <span>{completedOrder.eventSnapshot.venue}, {completedOrder.eventSnapshot.city}</span>
-                    <span>Date: {completedOrder.eventSnapshot.eventDate}</span>
+                    <span>Date: <strong className="text-[#D4AF37]">{formatEventDate(completedOrder.eventSnapshot.eventDate, 'full')}</strong></span>
                     <span>Show: {completedOrder.eventSnapshot.concertTime}</span>
                   </div>
                 </div>

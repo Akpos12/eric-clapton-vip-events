@@ -14,6 +14,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { ConcertEvent, TicketCategoryType } from '../types';
+import { formatEventDate } from '../lib/dateUtils';
 
 interface ConcertCatalogProps {
   events: ConcertEvent[];
@@ -195,7 +196,7 @@ export const ConcertCatalog: React.FC<ConcertCatalogProps> = ({
                   {/* Floating Date Tag */}
                   <div className="absolute top-3 left-3 px-3 py-1 bg-[#0B0B0D] border border-[#D4AF37]/30 text-[#D4AF37] text-xs font-mono font-bold flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" />
-                    <span>{ev.eventDate}</span>
+                    <span>{formatEventDate(ev.eventDate, 'short')}</span>
                   </div>
 
                   {/* Status Badge */}

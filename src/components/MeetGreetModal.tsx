@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { ConcertEvent, MeetGreetRequest } from '../types';
 import { createMeetGreetRequest } from '../lib/api';
+import { formatEventDate } from '../lib/dateUtils';
 
 interface MeetGreetModalProps {
   isOpen: boolean;
@@ -185,7 +186,7 @@ export const MeetGreetModal: React.FC<MeetGreetModalProps> = ({
                 >
                   {events.map((ev) => (
                     <option key={ev.id} value={ev.id} className="bg-[#0B0B0D]">
-                      {ev.eventName} ({ev.city}, {ev.eventDate})
+                      {ev.eventName} ({ev.city} — {formatEventDate(ev.eventDate, 'short')})
                     </option>
                   ))}
                 </select>

@@ -31,6 +31,7 @@ import {
 import { TicketOrder, MeetGreetRequest } from '../types';
 import { getOrderById, getMeetGreetById, searchTickets, isLegacy15thTicket, validateTicketForScan } from '../lib/api';
 import { downloadTicketPDF, downloadTicketPNG, generateTicketQRCode } from '../lib/ticketGenerator';
+import { formatEventDate } from '../lib/dateUtils';
 
 interface CheckTicketModalProps {
   isOpen: boolean;
@@ -622,7 +623,7 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                      <span>Date: {ticketOrder.eventSnapshot.eventDate}</span>
+                      <span>Date: <strong className="text-[#D4AF37]">{formatEventDate(ticketOrder.eventSnapshot.eventDate, 'full')}</strong></span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-[#D4AF37] shrink-0" />
@@ -875,7 +876,7 @@ export const CheckTicketModal: React.FC<CheckTicketModalProps> = ({
                   {meetGreet.eventName}
                 </h3>
                 <div className="text-xs text-[#F5F5DC]/70 font-mono">
-                  Date: {meetGreet.eventDate} | Venue: {meetGreet.venue}
+                  Date: <strong className="text-[#D4AF37]">{formatEventDate(meetGreet.eventDate, 'full')}</strong> | Venue: {meetGreet.venue}
                 </div>
               </div>
 

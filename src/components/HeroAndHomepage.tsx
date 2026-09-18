@@ -18,6 +18,7 @@ import {
   Bell
 } from 'lucide-react';
 import { ConcertEvent, VIPExperiencePackage } from '../types';
+import { parseEventDate, formatEventDate } from '../lib/dateUtils';
 
 interface HeroAndHomepageProps {
   events: ConcertEvent[];
@@ -38,24 +39,19 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
   onViewConcert,
   onNavigateTab
 }) => {
-  const featuredEvent = events.find(e => e.id === 'ec-stpaul-2026') || events.find(e => e.featured) || events[0];
+  const featuredEvent = events.find(e => e.id === 'ec-seattle-2026') || events.find(e => e.featured) || events[0];
   const [quickSearchQuery, setQuickSearchQuery] = useState('');
 
   const galleryImages = [
     {
       url: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=800&auto=format&fit=crop',
-      title: 'Grand Casino Arena Tour Headline',
-      subtitle: 'St. Paul, Minnesota'
+      title: 'Climate Pledge Arena Live Concert',
+      subtitle: 'Seattle, Washington'
     },
     {
-      url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800&auto=format&fit=crop',
-      title: 'Little Caesars Arena Tour Opener',
-      subtitle: 'Detroit, Michigan'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=800&auto=format&fit=crop',
-      title: 'United Center Chicago Blues Night',
-      subtitle: 'Chicago, Illinois'
+      url: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=800&auto=format&fit=crop',
+      title: 'T-Mobile Center Arena Blues Stage',
+      subtitle: 'Kansas City, Missouri'
     },
     {
       url: 'https://images.unsplash.com/photo-1464375117522-1311d6a5b81f?q=80&w=800&auto=format&fit=crop',
@@ -66,19 +62,19 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
 
   const announcements = [
     {
-      date: 'Sept 15, 2026',
-      title: 'Eric Clapton Live at Grand Casino Arena in St. Paul with Special Guest Jimmie Vaughan',
-      summary: 'Grand Casino Arena tour date confirmed for Tuesday, Sept 15, 2026 at 7:30 PM. Floor, VIP lounges, and general passes now open.'
+      date: 'Sept 18, 2026',
+      title: 'Eric Clapton Live at Climate Pledge Arena in Seattle with Special Guest Jimmie Vaughan',
+      summary: 'Climate Pledge Arena tour date scheduled for Friday, Sept 18, 2026 at 7:30 PM. Floor, VIP lounges, and standard passes now open.'
     },
     {
-      date: 'Aug 24, 2026',
-      title: 'Crossroads Guitar Festival 2026 Announced for Austin Moody Center (Sept 26-27)',
-      summary: 'Two-day festival tickets, VIP Patron lounges, and charity guest artist rosters confirmed.'
+      date: 'Sept 19, 2026',
+      title: 'Eric Clapton Live at T-Mobile Center in Kansas City with Special Guest Marcus King',
+      summary: 'Kansas City arena date confirmed for Saturday, Sept 19, 2026 at 8:00 PM. General admission and VIP reservations available.'
     },
     {
-      date: 'Aug 18, 2026',
-      title: 'North American September 2026 Tour Dates Confirmed Across Major Arenas',
-      summary: 'Tour stops include St. Paul, Detroit, Cincinnati, Chicago, Milwaukee, Kansas City, and Austin.'
+      date: 'Sept 26-27, 2026',
+      title: 'Crossroads Guitar Festival 2026 at Moody Center in Austin, Texas',
+      summary: 'Two-day festival tickets, VIP Patron lounges, and legendary charity guest artist rosters confirmed.'
     }
   ];
 
@@ -130,7 +126,7 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
                   The 2026-2027 World Tour
                 </span>
                 <span className="px-2 py-0.5 bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#D4AF37] text-[10px] font-mono font-bold uppercase tracking-wider">
-                  Headline: St. Paul, MN (Sept 15)
+                  Headline: Seattle, WA (Sept 18)
                 </span>
               </div>
 
@@ -146,18 +142,18 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
               <div className="p-3.5 bg-black/60 border border-[#D4AF37]/40 max-w-lg space-y-1">
                 <div className="flex items-center justify-between text-[11px] font-mono text-[#D4AF37]">
                   <span className="font-bold uppercase tracking-wider flex items-center gap-1.5">
-                    <Music className="w-3.5 h-3.5" /> Grand Casino Arena • St. Paul, MN
+                    <Music className="w-3.5 h-3.5" /> Climate Pledge Arena • Seattle, WA
                   </span>
-                  <span className="font-bold">Sept 15, 2026 • 7:30 PM</span>
+                  <span className="font-bold">Friday, Sept 18, 2026 • 7:30 PM</span>
                 </div>
                 <div className="text-xs text-[#F5F5DC]/80 flex items-center justify-between">
                   <span>Special Guest: <strong className="text-[#F5F5DC]">Jimmie Vaughan</strong></span>
-                  <span className="text-[#D4AF37] font-mono font-bold">VIP Passes from $2,000 (2 Left)</span>
+                  <span className="text-[#D4AF37] font-mono font-bold">VIP Passes from $2,000</span>
                 </div>
               </div>
 
               <p className="max-w-md text-sm leading-relaxed text-[#F5F5DC]/70 font-light">
-                Discover upcoming performances, premium concert tickets, and exclusive fan experiences across Europe and North America.
+                Discover upcoming performances, premium concert tickets, and exclusive fan experiences across North America and beyond.
               </p>
 
               {/* Action Call-to-Actions */}
@@ -167,7 +163,7 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
                   className="bg-[#D4AF37] text-black px-7 py-3.5 text-xs font-bold uppercase tracking-widest hover:bg-[#F5F5DC] transition-colors flex items-center gap-2 shadow-lg shadow-[#D4AF37]/10"
                 >
                   <Ticket className="w-4 h-4" />
-                  <span>Book St. Paul Tickets</span>
+                  <span>Book Seattle Passes</span>
                 </button>
 
                 <button
@@ -227,25 +223,25 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
               {/* Concert items list */}
               <div className="space-y-3">
                 {events.slice(0, 4).map((ev) => {
-                  const dateObj = new Date(ev.eventDate);
-                  const monthName = dateObj.toLocaleString('en-US', { month: 'short' });
-                  const dayNum = dateObj.getDate() || '24';
-                  const isStPaul = ev.id === 'ec-stpaul-2026';
+                  const dateInfo = parseEventDate(ev.eventDate);
+                  const monthName = dateInfo.monthShort;
+                  const dayNum = dateInfo.dayStr;
+                  const isSeattle = ev.id === 'ec-seattle-2026';
 
                   return (
                     <div
                       key={ev.id}
                       onClick={() => onBookTickets(ev)}
                       className={`group bg-[#1A1A1D] border p-3.5 flex items-center gap-4 cursor-pointer transition-all ${
-                        isStPaul 
+                        isSeattle 
                           ? 'border-[#D4AF37] bg-[#D4AF37]/5 shadow-md shadow-[#D4AF37]/5' 
                           : 'border-white/5 hover:border-[#D4AF37]/50'
                       }`}
                     >
                       <div className={`w-12 h-12 bg-[#0B0B0D] border flex flex-col items-center justify-center shrink-0 ${
-                        isStPaul ? 'border-[#D4AF37]' : 'border-[#D4AF37]/20 group-hover:border-[#D4AF37]/60'
+                        isSeattle ? 'border-[#D4AF37]' : 'border-[#D4AF37]/20 group-hover:border-[#D4AF37]/60'
                       }`}>
-                        <span className="text-[9px] uppercase tracking-wider text-[#F5F5DC]/60">{monthName}</span>
+                        <span className="text-[9px] uppercase tracking-wider text-[#D4AF37] font-bold">{monthName}</span>
                         <span className="text-base font-serif font-bold text-[#F5F5DC] leading-none">{dayNum}</span>
                       </div>
 
@@ -254,7 +250,7 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
                           <h4 className="text-xs font-bold tracking-tight text-[#F5F5DC] group-hover:text-[#D4AF37] transition-colors truncate">
                             {ev.venue}
                           </h4>
-                          {isStPaul && (
+                          {isSeattle && (
                             <span className="px-1.5 py-0.2 bg-[#D4AF37] text-black text-[8px] font-bold uppercase tracking-wider">
                               Headline
                             </span>
@@ -352,12 +348,13 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {events.map((ev) => {
-            const isStPaul = ev.id === 'ec-stpaul-2026';
+            const isSeattle = ev.id === 'ec-seattle-2026';
+            const dateDisplay = formatEventDate(ev.eventDate, 'short');
             return (
               <div
                 key={ev.id}
                 className={`bg-[#121214] border overflow-hidden transition-all flex flex-col justify-between group ${
-                  isStPaul
+                  isSeattle
                     ? 'border-[#D4AF37] ring-1 ring-[#D4AF37]/50 shadow-lg shadow-[#D4AF37]/10'
                     : 'border-white/10 hover:border-[#D4AF37]/50'
                 }`}
@@ -372,10 +369,11 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
                   <div className="absolute inset-0 bg-gradient-to-t from-[#121214] via-[#121214]/20 to-transparent" />
                   
                   <div className="absolute top-3 left-3 flex items-center gap-2">
-                    <div className="px-3 py-1 bg-[#0B0B0D] text-[#D4AF37] text-xs font-mono font-bold border border-[#D4AF37]/30">
-                      {ev.eventDate}
+                    <div className="px-3 py-1 bg-[#0B0B0D] text-[#D4AF37] text-xs font-mono font-bold border border-[#D4AF37]/30 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" />
+                      <span>{dateDisplay}</span>
                     </div>
-                    {isStPaul && (
+                    {isSeattle && (
                       <span className="px-2 py-1 bg-[#D4AF37] text-black text-[10px] font-mono font-bold uppercase tracking-wider">
                         Headline Tour Date
                       </span>
