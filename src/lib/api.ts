@@ -32,7 +32,7 @@ import {
 } from '../data/mockData';
 
 // Local storage fallback keys for instant responsiveness if offline or initial setup
-const LS_EVENTS_KEY = 'ec_vip_events_store_v12';
+const LS_EVENTS_KEY = 'ec_vip_events_store_v14';
 const LS_ORDERS_KEY = 'ec_vip_orders_store_v9';
 const LS_MGR_KEY = 'ec_vip_mgr_store_v9';
 const LS_SUPPORT_KEY = 'ec_vip_support_store_v9';
@@ -60,6 +60,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs = 2000): Promise<T>
 let _initialSeedExecuted = false;
 
 const OBSOLETE_OR_PASSED_EVENT_IDS = [
+  'ec-kansascity-2026',
   'ec-stpaul-2026',
   'ec-detroit-2026',
   'ec-cincinnati-2026',

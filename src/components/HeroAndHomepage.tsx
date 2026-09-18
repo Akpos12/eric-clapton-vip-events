@@ -49,14 +49,14 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
       subtitle: 'Seattle, Washington'
     },
     {
-      url: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=800&auto=format&fit=crop',
-      title: 'T-Mobile Center Arena Blues Stage',
-      subtitle: 'Kansas City, Missouri'
-    },
-    {
       url: 'https://images.unsplash.com/photo-1464375117522-1311d6a5b81f?q=80&w=800&auto=format&fit=crop',
       title: 'Crossroads Guitar Festival at Moody Center',
       subtitle: 'Austin, Texas'
+    },
+    {
+      url: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=800&auto=format&fit=crop',
+      title: 'Exclusive VIP Hospitality & Backstage Lounge',
+      subtitle: 'Official Artist VIP Experience'
     }
   ];
 
@@ -67,14 +67,14 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
       summary: 'Climate Pledge Arena tour date scheduled for Friday, Sept 18, 2026 at 7:30 PM. Floor, VIP lounges, and standard passes now open.'
     },
     {
-      date: 'Sept 19, 2026',
-      title: 'Eric Clapton Live at T-Mobile Center in Kansas City with Special Guest Marcus King',
-      summary: 'Kansas City arena date confirmed for Saturday, Sept 19, 2026 at 8:00 PM. General admission and VIP reservations available.'
-    },
-    {
       date: 'Sept 26-27, 2026',
       title: 'Crossroads Guitar Festival 2026 at Moody Center in Austin, Texas',
       summary: 'Two-day festival tickets, VIP Patron lounges, and legendary charity guest artist rosters confirmed.'
+    },
+    {
+      date: 'Sept 2026',
+      title: 'North American 2026 Live Tour Passes and VIP Meet & Greet Status',
+      summary: 'Official digital passes with instant QR encryption, Apple Wallet support, and VIP check-in access.'
     }
   ];
 
