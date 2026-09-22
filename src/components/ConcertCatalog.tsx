@@ -200,8 +200,18 @@ export const ConcertCatalog: React.FC<ConcertCatalogProps> = ({
                   </div>
 
                   {/* Status Badge */}
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                    {ev.vipAvailability && (
+                  <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                    {ev.id === 'ec-seattle-2026' && (
+                      <span className="px-2.5 py-1 bg-red-600 text-white text-[10px] font-bold uppercase font-mono tracking-wider shadow-lg">
+                        Standard & Regular SOLD OUT
+                      </span>
+                    )}
+                    {ev.id === 'ec-seattle-2026' && (
+                      <span className="px-2.5 py-0.5 bg-[#D4AF37] text-black text-[10px] font-bold uppercase font-mono tracking-wider shadow-lg">
+                        VIP: 4 Remaining
+                      </span>
+                    )}
+                    {ev.id !== 'ec-seattle-2026' && ev.vipAvailability && (
                       <span className="px-2.5 py-0.5 bg-[#D4AF37] text-black text-[10px] font-bold uppercase font-mono tracking-wider">
                         VIP Active
                       </span>

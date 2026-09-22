@@ -62,9 +62,9 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
 
   const announcements = [
     {
-      date: 'Sept 18, 2026',
-      title: 'Eric Clapton Live at Climate Pledge Arena in Seattle with Special Guest Jimmie Vaughan',
-      summary: 'Climate Pledge Arena tour date scheduled for Friday, Sept 18, 2026 at 7:30 PM. Floor, VIP lounges, and standard passes now open.'
+      date: 'Sept 22, 2026',
+      title: 'Eric Clapton Live at Climate Pledge Arena in Seattle (Postponed Date: Sept 22, 5:30 PM)',
+      summary: 'Climate Pledge Arena concert rescheduled to Tuesday, September 22, 2026 at 5:30 PM. Regular and Standard tickets are officially Sold Out. Only 4 VIP Experience passes remain available.'
     },
     {
       date: 'Sept 26-27, 2026',
@@ -126,7 +126,7 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
                   The 2026-2027 World Tour
                 </span>
                 <span className="px-2 py-0.5 bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#D4AF37] text-[10px] font-mono font-bold uppercase tracking-wider">
-                  Headline: Seattle, WA (Sept 18)
+                  Headline: Seattle, WA (Sept 22) • Postponed Date
                 </span>
               </div>
 
@@ -144,11 +144,11 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
                   <span className="font-bold uppercase tracking-wider flex items-center gap-1.5">
                     <Music className="w-3.5 h-3.5" /> Climate Pledge Arena • Seattle, WA
                   </span>
-                  <span className="font-bold">Friday, Sept 18, 2026 • 7:30 PM</span>
+                  <span className="font-bold">Tuesday, Sept 22, 2026 • 5:30 PM</span>
                 </div>
                 <div className="text-xs text-[#F5F5DC]/80 flex items-center justify-between">
                   <span>Special Guest: <strong className="text-[#F5F5DC]">Jimmie Vaughan</strong></span>
-                  <span className="text-[#D4AF37] font-mono font-bold">VIP Passes from $2,000</span>
+                  <span className="text-[#D4AF37] font-mono font-bold">VIP Experience: $3,000 (Only 4 Left • Regular/Standard Sold Out)</span>
                 </div>
               </div>
 
@@ -246,13 +246,18 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <h4 className="text-xs font-bold tracking-tight text-[#F5F5DC] group-hover:text-[#D4AF37] transition-colors truncate">
                             {ev.venue}
                           </h4>
                           {isSeattle && (
                             <span className="px-1.5 py-0.2 bg-[#D4AF37] text-black text-[8px] font-bold uppercase tracking-wider">
                               Headline
+                            </span>
+                          )}
+                          {isSeattle && (
+                            <span className="px-1.5 py-0.2 bg-red-950/80 text-red-400 border border-red-500/50 text-[8px] font-bold uppercase tracking-wider">
+                              Reg/Std Sold Out
                             </span>
                           )}
                         </div>
@@ -262,8 +267,19 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
                       </div>
 
                       <div className="text-right shrink-0">
-                        <p className="text-[9px] text-[#F5F5DC]/40 uppercase mb-0.5">From</p>
-                        <p className="text-xs font-mono text-[#D4AF37] font-bold">${ev.startingPrice}.00</p>
+                        {isSeattle ? (
+                          <>
+                            <span className="px-1.5 py-0.5 bg-[#D4AF37]/20 border border-[#D4AF37]/40 text-[#D4AF37] text-[9px] font-mono font-bold block mb-0.5">
+                              VIP: 4 Left
+                            </span>
+                            <p className="text-xs font-mono text-[#D4AF37] font-bold">${ev.startingPrice}.00</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-[9px] text-[#F5F5DC]/40 uppercase mb-0.5">From</p>
+                            <p className="text-xs font-mono text-[#D4AF37] font-bold">${ev.startingPrice}.00</p>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
@@ -379,6 +395,17 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
                       </span>
                     )}
                   </div>
+
+                  {isSeattle && (
+                    <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                      <span className="px-2.5 py-1 bg-red-600 text-white text-[9px] font-bold uppercase font-mono tracking-wider shadow-lg">
+                        Reg/Std SOLD OUT
+                      </span>
+                      <span className="px-2.5 py-0.5 bg-[#D4AF37] text-black text-[9px] font-bold uppercase font-mono tracking-wider shadow-lg">
+                        VIP: 4 Left
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
@@ -396,9 +423,35 @@ export const HeroAndHomepage: React.FC<HeroAndHomepageProps> = ({
                     )}
                   </div>
 
+                  {/* Tier availability summary pills */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {ev.ticketCategories.map((tier) => {
+                      const isSoldOut = tier.available <= 0 || tier.badge?.toLowerCase().includes('sold out');
+                      return (
+                        <span
+                          key={tier.id}
+                          className={`px-2 py-0.5 text-[9px] border font-mono flex items-center gap-1 ${
+                            isSoldOut
+                              ? 'bg-red-950/40 text-red-400 border-red-900/50'
+                              : 'bg-[#0B0B0D] text-[#D4AF37] border-[#D4AF37]/30'
+                          }`}
+                        >
+                          <span>{tier.name}: ${tier.price.toLocaleString()}</span>
+                          {isSoldOut ? (
+                            <span className="text-[8px] text-red-400 font-bold uppercase ml-0.5">SOLD OUT</span>
+                          ) : (
+                            <span className="text-[8px] text-[#D4AF37] font-bold uppercase ml-0.5">({tier.available} Left)</span>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </div>
+
                   <div className="pt-4 border-t border-white/5 flex items-center justify-between">
                     <div>
-                      <span className="text-[9px] text-[#F5F5DC]/40 uppercase tracking-wider block">From</span>
+                      <span className="text-[9px] text-[#F5F5DC]/40 uppercase tracking-wider block font-mono">
+                        {isSeattle ? 'VIP Tier' : 'From'}
+                      </span>
                       <span className="font-mono text-base font-bold text-[#D4AF37]">${ev.startingPrice}.00</span>
                     </div>
 

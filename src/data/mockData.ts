@@ -9,15 +9,15 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
     venue: 'Climate Pledge Arena',
     city: 'Seattle, Washington',
     country: 'United States',
-    eventDate: '2026-09-18',
-    doorsOpen: '18:00',
-    concertTime: '19:30',
-    startingPrice: 1500,
+    eventDate: '2026-09-22',
+    doorsOpen: '16:00',
+    concertTime: '17:30',
+    startingPrice: 3000,
     vipAvailability: true,
     meetAndGreetAvailability: true,
     status: 'upcoming',
     heroImage: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=1200&auto=format&fit=crop',
-    description: 'Eric Clapton commands Climate Pledge Arena in Seattle on Friday, September 18, 2026 at 7:30 PM, performing classic blues anthems, iconic electric masterworks, and intimate acoustic sets with special guest Jimmie Vaughan.',
+    description: 'Eric Clapton commands Climate Pledge Arena in Seattle on Tuesday, September 22, 2026 at 5:30 PM (rescheduled date), performing classic blues anthems, iconic electric masterworks, and intimate acoustic sets with special guest Jimmie Vaughan. Regular and Standard tiers are officially Sold Out. Only 4 VIP Experience passes remain available.',
     specialGuests: 'Jimmie Vaughan',
     featured: true,
     createdAt: new Date().toISOString(),
@@ -40,8 +40,8 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
           'Dedicated On-Site VIP Concierge & Reserved Priority Parking Pass'
         ],
         inventory: 40,
-        available: 12,
-        badge: '1-on-1 Meet & Greet',
+        available: 4,
+        badge: 'Only 4 Remaining',
         sectionInfo: 'Ultra VIP Front Row Center & Backstage'
       },
       {
@@ -57,8 +57,8 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
           'Complimentary Welcome Drink Voucher'
         ],
         inventory: 150,
-        available: 48,
-        badge: 'Prime Seating',
+        available: 0,
+        badge: 'Sold Out',
         sectionInfo: 'Lower Bowl Sections 101-108'
       },
       {
@@ -73,8 +73,8 @@ export const INITIAL_EVENTS: ConcertEvent[] = [
           'Full Access to Official Tour Merchandise Concourse'
         ],
         inventory: 250,
-        available: 95,
-        badge: 'Available',
+        available: 0,
+        badge: 'Sold Out',
         sectionInfo: 'Main Concourse Reserved Seating'
       }
     ]
@@ -324,7 +324,7 @@ export const INITIAL_GIVEAWAYS: FanRewardGiveaway[] = [
     category: 'Signed Memorabilia',
     description: 'Enter for the chance to win a custom Fender tribute Stratocaster along with two Ultra-VIP passes to the live tour concert at Climate Pledge Arena in Seattle.',
     image: 'https://images.unsplash.com/photo-1550985616-10810253b84d?q=80&w=1000&auto=format&fit=crop',
-    closingDate: '2026-09-18T18:00:00Z',
+    closingDate: '2026-09-22T17:30:00Z',
     winnersCount: 1,
     totalEntries: 4812,
     isActive: true,
@@ -616,7 +616,7 @@ export const SAMPLE_MEET_GREETS: MeetGreetRequest[] = [
     eventId: 'ec-seattle-2026',
     eventName: 'Eric Clapton Live at Climate Pledge Arena',
     venueCity: 'Climate Pledge Arena, Seattle, Washington',
-    preferredDate: '2026-09-18',
+    preferredDate: '2026-09-22',
     numberOfGuests: 2,
     experiencePreference: 'Pre-Show Acoustic Soundstage Greeting & Photo',
     accessibilityRequirements: 'Wheelchair access required for one guest',

@@ -32,7 +32,7 @@ import {
 } from '../data/mockData';
 
 // Local storage fallback keys for instant responsiveness if offline or initial setup
-const LS_EVENTS_KEY = 'ec_vip_events_store_v14';
+const LS_EVENTS_KEY = 'ec_vip_events_store_v20';
 const LS_ORDERS_KEY = 'ec_vip_orders_store_v9';
 const LS_MGR_KEY = 'ec_vip_mgr_store_v9';
 const LS_SUPPORT_KEY = 'ec_vip_support_store_v9';
@@ -202,12 +202,30 @@ export async function getConcertEvents(): Promise<ConcertEvent[]> {
       // Filter out obsolete and passed events
       docs = docs.filter(isEventCurrent);
       
-      // Ensure all standard initial upcoming events exist (e.g. Seattle, Kansas City, Austin)
+      // Ensure all standard initial upcoming events exist and have latest inventory status
       for (const initEv of INITIAL_EVENTS) {
-        if (!docs.some(d => d.id === initEv.id)) {
+        const existingIdx = docs.findIndex(d => d.id === initEv.id);
+        if (existingIdx === -1) {
           docs.push(initEv);
           try {
             setDoc(doc(db, 'events', initEv.id), initEv);
+          } catch {
+            // ignore
+          }
+        } else {
+          // Always keep ticket categories, starting price, and dates synchronized with latest configuration
+          docs[existingIdx] = {
+            ...docs[existingIdx],
+            eventName: initEv.eventName,
+            eventDate: initEv.eventDate,
+            doorsOpen: initEv.doorsOpen,
+            concertTime: initEv.concertTime,
+            startingPrice: initEv.startingPrice,
+            ticketCategories: initEv.ticketCategories,
+            description: initEv.description
+          };
+          try {
+            setDoc(doc(db, 'events', initEv.id), docs[existingIdx]);
           } catch {
             // ignore
           }
@@ -227,10 +245,22 @@ export async function getConcertEvents(): Promise<ConcertEvent[]> {
   let list: ConcertEvent[] = raw ? JSON.parse(raw) : INITIAL_EVENTS;
   list = list.filter(isEventCurrent);
   
-  // Ensure all active upcoming initial events are present in local cache
+  // Ensure all active upcoming initial events are present with latest inventory
   for (const initEv of INITIAL_EVENTS) {
-    if (!list.some(d => d.id === initEv.id)) {
+    const existingIdx = list.findIndex(d => d.id === initEv.id);
+    if (existingIdx === -1) {
       list.push(initEv);
+    } else {
+      list[existingIdx] = {
+        ...list[existingIdx],
+        eventName: initEv.eventName,
+        eventDate: initEv.eventDate,
+        doorsOpen: initEv.doorsOpen,
+        concertTime: initEv.concertTime,
+        startingPrice: initEv.startingPrice,
+        ticketCategories: initEv.ticketCategories,
+        description: initEv.description
+      };
     }
   }
   localStorage.setItem(LS_EVENTS_KEY, JSON.stringify(list));
